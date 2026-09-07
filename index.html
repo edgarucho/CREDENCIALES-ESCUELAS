@@ -1,0 +1,3531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6efe5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ALUM-NA">
+<title>ALUM-NA — Credenciales escolares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Archivo:wdth,wght@75..100,400;75..100,500;75..100,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241d16; --ink-2:#332a20; --ink-3:#463a2c;
+    --paper:#f6efe5; --paper-2:#efe6d8; --card:#fffdf9;
+    --accent:#c5572a; --accent-luz:#e07a4d; --verde:#6d8c5a; --rojo:#a8402b;
+    --line:#ddd2c0; --muted:#7d7267; --muted-osc:#a1917f;
+    --sombra:0 1px 2px rgba(36,29,22,.06), 0 8px 24px -12px rgba(36,29,22,.25);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:Archivo,system-ui,sans-serif;font-size:15px;line-height:1.55;
+       -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Bricolage Grotesque',Archivo,sans-serif;letter-spacing:-.025em;margin:0}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11.5px;
+        font-variant-numeric:tabular-nums}
+  .oculto{display:none !important}
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+  /* ------------------------------------------------------------ entrada */
+  .puerta{min-height:100dvh;display:grid;place-items:center;padding:24px}
+  .llave{width:100%;max-width:330px;text-align:center}
+  .llave .lente{width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);
+                margin:0 auto 20px;position:relative}
+  .llave .lente::after{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--accent)}
+  .llave h1{font-size:30px;margin-bottom:4px}
+  .llave p{color:var(--muted);margin:0 0 26px;font-size:14px}
+  .puntos{display:flex;gap:10px;justify-content:center;height:14px;margin-bottom:26px}
+  .puntos i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted-osc);
+            transition:background .15s,border-color .15s,transform .15s}
+  .puntos i.on{background:var(--ink);border-color:var(--ink);transform:scale(1.05)}
+  .puntos.mal i{border-color:var(--rojo);background:transparent;animation:tiembla .4s}
+  @keyframes tiembla{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .teclado button{background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+                  padding:16px 0;font-size:21px;font-weight:500;transition:background .12s,border-color .12s}
+  .teclado button:active{background:var(--paper-2);border-color:var(--ink-3)}
+  .teclado .vacia{visibility:hidden}
+  .aviso-mal{color:var(--rojo);font-size:13.5px;min-height:20px;margin-top:16px}
+
+  /* ------------------------------------------------------------- marco */
+  .barra{position:sticky;top:0;z-index:40;background:var(--paper);
+         border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;
+         padding:11px 18px;flex-wrap:wrap}
+  .marca{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.02em}
+  .marca .pt{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--accent);position:relative}
+  .marca .pt::after{content:'';position:absolute;inset:3.5px;border-radius:50%;background:var(--accent)}
+  .migas{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13.5px;min-width:0}
+  .migas b{font-weight:600;color:var(--ink)}
+  .migas button{background:none;border:none;color:var(--muted);padding:4px 0;text-decoration:underline;
+                text-underline-offset:3px}
+  .migas button:hover{color:var(--accent)}
+  .crece{flex:1}
+  .pildora{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);
+           background:var(--card);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .pildora .luz{width:8px;height:8px;border-radius:50%;background:var(--verde)}
+  .pildora.trabajando .luz{background:var(--accent);animation:late 1s infinite}
+  .pildora.mala .luz{background:var(--rojo)}
+  @keyframes late{50%{opacity:.25}}
+  main{padding:26px 18px 90px;max-width:1400px;margin:0 auto}
+
+  /* ------------------------------------------------------------ botones */
+  .btn{background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);border-radius:11px;
+       padding:9px 17px;font-weight:600;font-size:14.5px;transition:background .15s,transform .1s}
+  .btn:hover{background:var(--ink-2)}
+  .btn:active{transform:scale(.985)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.claro{background:var(--card);color:var(--ink);border-color:var(--line)}
+  .btn.claro:hover{background:var(--paper-2);border-color:var(--ink-3)}
+  .btn.fuego{background:var(--accent);border-color:var(--accent)}
+  .btn.fuego:hover{background:var(--accent-luz)}
+  .btn.peligro{background:none;color:var(--rojo);border-color:transparent}
+  .btn.peligro:hover{background:rgba(168,64,43,.08)}
+  .btn.chico{padding:6px 12px;font-size:13px;border-radius:9px}
+
+  input[type=text],input[type=number],input[type=password],select,textarea{
+    background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;
+    width:100%;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--ink-3);outline:none}
+  label.campo{display:block;margin-bottom:14px}
+  label.campo span{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+
+  /* ----------------------------------------------------------- escuelas */
+  .titulo-fila{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .titulo-fila h1{font-size:clamp(26px,3.6vw,36px)}
+  .titulo-fila p{color:var(--muted);margin:4px 0 0;font-size:14.5px}
+  .escuelas{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+  .escuela{background:var(--card);border:1.5px solid var(--line);border-radius:16px;overflow:hidden}
+  .escuela header{padding:16px 18px 13px;border-bottom:1px solid var(--line);
+                  display:flex;align-items:flex-start;gap:10px}
+  .escuela header h2{font-size:18px;flex:1;line-height:1.25}
+  .niveles{list-style:none;margin:0;padding:6px}
+  .niveles li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+              transition:background .12s}
+  .niveles li:hover{background:var(--paper-2)}
+  .niveles li button.abrir{flex:1;text-align:left;background:none;border:none;padding:0;font-weight:500}
+  .niveles .cuenta{color:var(--muted);font-size:12.5px}
+  .vacio{padding:14px 18px;color:var(--muted);font-size:13.5px}
+  .escuela footer{padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:8px;
+  flex-wrap:wrap;align-items:center}
+.escuela footer .pendiente{font-size:12px;color:var(--muted)}
+  .fantasma{background:none;border:1.5px dashed var(--line);border-radius:16px;min-height:120px;
+            color:var(--muted);font-size:15px;display:grid;place-items:center;padding:26px;
+            transition:border-color .15s,color .15s}
+  .fantasma:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ------------------------------------------------------------- nivel */
+  .pestanas{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px;
+            overflow-x:auto}
+  .pestanas button{background:none;border:none;padding:11px 15px;color:var(--muted);font-weight:500;
+                   border-bottom:2.5px solid transparent;white-space:nowrap;margin-bottom:-1px}
+  .pestanas button.on{color:var(--ink);border-bottom-color:var(--accent)}
+  .herramientas{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .herramientas .buscador{position:relative;flex:1;min-width:180px;max-width:320px}
+
+  .tablon{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:auto;
+          max-height:calc(100dvh - 260px)}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px}
+  thead th{position:sticky;top:0;background:var(--paper-2);z-index:2;text-align:left;
+           padding:10px 12px;font-size:12px;font-weight:600;color:var(--ink-3);
+           border-bottom:1.5px solid var(--line);white-space:nowrap}
+  tbody td{padding:0;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr.activo td{background:#fff6ec}
+  .celda{padding:9px 12px;min-height:38px;cursor:text;white-space:nowrap;overflow:hidden;
+         text-overflow:ellipsis;max-width:260px}
+  .celda:hover{background:var(--paper-2)}
+  .celda input{border:none;border-radius:0;background:#fff;padding:8px 11px;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+  td.num{color:var(--muted-osc);text-align:right;padding:9px 8px;width:42px}
+  .marcaimg{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+  .marcaimg .luz{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+  .marcaimg.lista .luz{background:var(--verde)}
+  .marcaimg.cola .luz{background:var(--accent);animation:late 1s infinite}
+  .acciones{display:flex;gap:2px;padding-right:8px;justify-content:flex-end}
+  .icono{background:none;border:none;color:var(--muted-osc);padding:6px;border-radius:8px;line-height:1}
+  .icono:hover{background:var(--paper-2);color:var(--ink)}
+  .icono.rojo:hover{color:var(--rojo)}
+
+  /* ------------------------------------------------------------ camara */
+  .estudio{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.estudio{grid-template-columns:1fr}}
+  .lista{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+  .lista .tope{padding:11px 13px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .lista .tope input{padding:7px 10px;font-size:13.5px}
+  .rollo{list-style:none;margin:0;padding:5px;max-height:calc(100dvh - 300px);overflow:auto}
+  .rollo li{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;
+            font-size:14px}
+  .rollo li:hover{background:var(--paper-2)}
+  .rollo li.on{background:var(--ink);color:var(--paper)}
+  .rollo li.on .luz{outline:1.5px solid rgba(255,255,255,.3)}
+  .rollo .luz{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+  .rollo .luz.lista{background:var(--verde)}
+  .rollo .luz.cola{background:var(--accent)}
+  .rollo .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .platou{background:var(--ink);border-radius:16px;padding:16px;color:var(--paper)}
+  .platou .tope{display:flex;gap:10px;align-items:center;margin-bottom:13px;flex-wrap:wrap}
+  .platou select{background:var(--ink-2);border-color:var(--ink-3);color:var(--paper);width:auto;
+                 max-width:260px;font-size:13px;padding:7px 10px}
+  .platou .quien{font-family:'Bricolage Grotesque',sans-serif;font-size:19px;font-weight:600;flex:1;
+                 min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .escena{position:relative;background:#12100d;border-radius:11px;overflow:hidden;
+          display:grid;place-items:center;min-height:340px}
+  .escena video,.escena img{max-width:100%;max-height:min(62dvh,620px);display:block}
+  .guia{position:absolute;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 4000px rgba(18,16,13,.55);
+        pointer-events:none;border-radius:2px}
+  .guia::before{content:'';position:absolute;left:0;right:0;top:33%;border-top:1px dashed rgba(255,255,255,.35)}
+  .apagado{color:var(--muted-osc);text-align:center;padding:50px 20px;font-size:14.5px}
+  .mandos{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+  .mandos .ayuda{color:var(--muted-osc);font-size:12.5px;flex:1;min-width:150px}
+  .disparo{width:62px;height:62px;border-radius:50%;background:var(--paper);border:4px solid var(--muted-osc);
+           display:grid;place-items:center;transition:transform .1s}
+  .disparo:active{transform:scale(.93)}
+  .disparo i{width:38px;height:38px;border-radius:50%;background:var(--accent);display:block}
+  .editor{margin-top:12px;background:var(--ink-2);border-radius:12px;padding:13px 15px}
+  .editor .rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 18px}
+  .editor .ctrl{min-width:0}
+  .editor .ctrl label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted-osc);
+                      margin-bottom:5px;gap:8px}
+  .editor .ctrl label b{color:var(--paper);font-weight:500;font-variant-numeric:tabular-nums}
+  .editor input[type=range]{width:100%;accent-color:var(--accent);margin:0;height:20px}
+  .editor .fila{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .editor .fila button{background:var(--ink-3);border:1.5px solid var(--ink-3);color:var(--paper);
+                       border-radius:9px;padding:7px 13px;font-size:13.5px}
+  .editor .fila button:hover{background:var(--ink);border-color:var(--muted-osc)}
+  .editor .pista{color:var(--muted-osc);font-size:12.5px;flex:1;min-width:140px}
+  #lienzoEdit{cursor:grab;touch-action:none;display:block;max-width:100%;
+              max-height:min(58dvh,600px);border-radius:3px}
+  #lienzoEdit.agarrando{cursor:grabbing}
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+  .flash.on{animation:flash .32s}
+  @keyframes flash{from{opacity:.85}to{opacity:0}}
+
+  /* ------------------------------------------------------------ ajustes */
+  .fichas{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start}
+  .ficha{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px}
+  .ficha h3{font-size:16px;margin-bottom:4px}
+  .ficha p.pie{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .cols{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-wrap:wrap;gap:7px}
+  .cols li{display:flex;align-items:center;gap:6px;background:var(--paper-2);border-radius:999px;
+           padding:5px 6px 5px 12px;font-size:13px}
+  .cols li b{font-weight:600}
+  .cols .quitar{background:none;border:none;color:var(--muted);padding:2px 5px;border-radius:50%;line-height:1}
+  .cols .quitar:hover{color:var(--rojo);background:rgba(168,64,43,.1)}
+
+  /* ------------------------------------------------------------- velos */
+  .velo{position:fixed;inset:0;background:rgba(36,29,22,.55);display:none;place-items:center;
+        z-index:60;padding:18px;backdrop-filter:blur(2px)}
+  .velo.on{display:grid}
+  .cuadro{background:var(--card);border-radius:18px;padding:24px;width:min(560px,100%);
+          max-height:90dvh;overflow:auto;box-shadow:var(--sombra)}
+  .cuadro.ancho{width:min(860px,100%)}
+  .cuadro h2{font-size:21px;margin-bottom:6px}
+  .cuadro p.entrada{color:var(--muted);margin:0 0 18px;font-size:14px}
+  .pie-botones{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px}
+  @media(max-width:520px){.opciones{grid-template-columns:1fr}}
+  .opcion{background:var(--paper-2);border:1.5px solid var(--line);border-radius:13px;padding:16px;
+          text-align:left;transition:border-color .15s,transform .12s}
+  .opcion:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .opcion b{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:15.5px;margin-bottom:3px}
+  .opcion em{font-style:normal;color:var(--muted);font-size:13px;line-height:1.4}
+  .listaCols{display:grid;gap:7px;max-height:300px;overflow:auto;padding:3px;
+             border:1.5px solid var(--line);border-radius:12px;background:var(--paper-2)}
+  .lc{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:9px;padding:7px 10px}
+  .lc input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex:none}
+  .lc input[type=text]{padding:6px 9px;font-size:13.5px}
+  .lc .fuente{color:var(--muted);font-size:12px;white-space:nowrap;max-width:130px;overflow:hidden;
+              text-overflow:ellipsis}
+  .firma-caja{background:#fff;border:1.5px solid var(--line);border-radius:12px;touch-action:none;
+              width:100%;display:block}
+  .alcance{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.alcance button{border:1px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+.alcance button.activo{background:var(--accent);border-color:var(--accent);color:#fff}
+.alcance .nota{font-size:12px;color:var(--muted);flex:1;min-width:160px}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.tarjeta-foto{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  box-shadow:var(--sombra);display:flex;flex-direction:column}
+.tarjeta-foto .marco{aspect-ratio:3/4;background:var(--paper-2);display:flex;align-items:center;
+  justify-content:center;position:relative;cursor:zoom-in;overflow:hidden}
+.tarjeta-foto .marco img,.tarjeta-foto .marco canvas{width:100%;height:100%;object-fit:contain;display:block}
+.tarjeta-foto .marco .aviso{font-size:12px;color:var(--muted-osc);padding:10px;text-align:center}
+.tarjeta-foto .nombre{padding:8px 10px;font-size:12.5px;line-height:1.35;border-top:1px solid var(--line)}
+.tarjeta-foto .nombre b{display:block;font-weight:600}
+.tarjeta-foto .acciones{display:flex;gap:6px;padding:0 8px 8px}
+.tarjeta-foto .acciones button{flex:1;font-size:11.5px;padding:5px 6px;border-radius:8px;
+  border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-family:inherit}
+.tarjeta-foto .acciones button:hover{background:var(--paper-2)}
+.tarjeta-foto.falta .marco{background:repeating-linear-gradient(45deg,var(--paper-2),
+  var(--paper-2) 8px,var(--paper) 8px,var(--paper) 16px)}
+.marca{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.grande{max-width:min(96vw,1020px)}
+.taller{display:grid;grid-template-columns:1fr 290px;gap:16px;align-items:start}
+@media(max-width:820px){.taller{grid-template-columns:1fr}}
+.mandos{display:flex;flex-direction:column;gap:2px;max-height:60dvh;overflow:auto;padding-right:4px}
+.mandos hr{border:none;border-top:1px solid var(--line);margin:12px 0 10px;width:100%}
+.mandos .linea{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.mandos .pie{font-size:11.5px;color:var(--muted);margin-top:10px}
+.caja canvas{background:repeating-conic-gradient(#3a3128 0 25%,#2b241c 0 50%) 0 0/20px 20px}
+.grande .caja{background:var(--ink);border-radius:10px;padding:10px;text-align:center}
+.grande .caja canvas,.grande .caja img{max-width:100%;max-height:64dvh;display:block;margin:0 auto}
+.campo-fila{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px;
+              margin-bottom:8px}
+  .campo-fila .arriba{display:flex;gap:7px;align-items:center;margin-bottom:8px}
+  .campo-fila .arriba input[type=text]{flex:1;font-size:14px;padding:7px 10px}
+  .campo-fila .abajo{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .campo-fila select{width:auto;font-size:13px;padding:6px 9px}
+  .campo-fila label{display:inline-flex;align-items:center;gap:6px;margin:0}
+  .campo-fila input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .ojo{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;
+       font-size:12.5px;font-weight:600;white-space:nowrap}
+  .ojo.abierto{background:#eef2ea;border-color:var(--verde);color:var(--verde)}
+  .ojo.cerrado{background:#fbeae6;border-color:var(--rojo);color:var(--rojo)}
+  .mover{background:none;border:none;color:var(--muted-osc);padding:3px 5px;line-height:1;border-radius:6px}
+  .mover:hover{background:var(--paper-2);color:var(--ink)}
+  .aviso{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+         background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:11px;font-size:14px;
+         opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80;max-width:90vw}
+  .aviso.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .aviso.mal{background:var(--rojo)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════ ENTRAR -->
+<div class="puerta" id="puerta">
+  <div class="llave">
+    <div class="lente"></div>
+    <h1>ALUM-NA</h1>
+    <p>Credenciales escolares · Foto Estudio Graciela</p>
+    <div class="puntos" id="puntos"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="teclado" id="teclado"></div>
+    <div class="aviso-mal" id="avisoMal"></div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ APP -->
+<div id="app" class="oculto">
+  <div class="barra">
+    <div class="marca"><span class="pt"></span> ALUM-NA
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v25</span></div>
+    <div class="migas" id="migas"></div>
+    <div class="crece"></div>
+    <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
+    <button class="btn claro chico" onclick="abrirDrive()">Drive</button>
+    <button class="btn claro chico" onclick="salir()">Salir</button>
+  </div>
+
+  <main>
+    <!-- ------------------------------------------------------- escuelas -->
+    <section id="vEscuelas">
+      <div class="titulo-fila">
+        <div>
+          <h1>Escuelas</h1>
+          <p>Cada escuela guarda sus niveles, sus fotos y su Excel en Drive.</p>
+        </div>
+        <div class="crece"></div>
+        <button class="btn fuego" onclick="pedirEscuela()">Nueva escuela</button>
+      </div>
+      <div class="escuelas" id="listaEscuelas"></div>
+    </section>
+
+    <!-- ---------------------------------------------------------- nivel -->
+    <section id="vNivel" class="oculto">
+      <div class="titulo-fila">
+        <div>
+          <h1 id="tituloNivel"></h1>
+          <p id="subtituloNivel"></p>
+        </div>
+      </div>
+      <div class="pestanas">
+        <button id="tabAlumnos" class="on" onclick="verPestana('alumnos')">Alumnos</button>
+        <button id="tabCamara" onclick="verPestana('camara')">Sesión de fotos</button>
+        <button id="tabFotos" onclick="verPestana('fotos')">Fotos tomadas</button>
+        <button id="tabAjustes" onclick="verPestana('ajustes')">Ajustes</button>
+      </div>
+
+      <!-- alumnos -->
+      <div id="pAlumnos">
+        <div class="herramientas">
+          <div class="buscador"><input type="text" id="buscar" placeholder="Buscar alumno…" oninput="pintarTabla()"></div>
+          <button class="btn claro chico" onclick="agregarFilaVacia()">Agregar alumno</button>
+          <button class="btn claro chico" onclick="abrirImportarExistente()">Importar Excel</button>
+          <div class="crece"></div>
+          <span class="mono" id="conteo"></span>
+          <button class="btn chico" onclick="exportar()">Exportar a Drive</button>
+        </div>
+        <div class="tablon"><table id="tabla"></table></div>
+      </div>
+
+      <!-- camara -->
+      <div id="pCamara" class="oculto">
+        <div class="estudio">
+          <div class="lista">
+            <div class="tope">
+              <input type="text" id="buscarFoto" placeholder="Buscar…" oninput="pintarRollo()">
+              <button class="btn claro chico" id="btnFiltro" onclick="alternarFiltro()">Solo faltan</button>
+            </div>
+            <div class="tope" style="border-bottom:1px solid var(--line);padding:8px 13px">
+              <span class="mono" id="conteoRollo" style="color:var(--muted)"></span>
+            </div>
+            <ul class="rollo" id="rollo"></ul>
+          </div>
+
+          <div class="platou">
+            <div class="tope">
+              <span class="quien" id="quien">—</span>
+              <select id="camaras" onchange="prender()"></select>
+              <select id="propFoto" title="Proporción del recorte" onchange="cambiarProporcion(this.value)">
+                <option value="3:4">Vertical 3:4</option>
+                <option value="2:3">Vertical 2:3</option>
+                <option value="4:5">Vertical 4:5</option>
+                <option value="1:1">Cuadrada 1:1</option>
+                <option value="4:3">Horizontal 4:3</option>
+                <option value="3:2">Horizontal 3:2</option>
+              </select>
+              <select id="calidadFoto" title="Tamaño de la foto que se guarda">
+                <option value="1600">Guardar 1600 px</option>
+                <option value="2400">Guardar 2400 px</option>
+                <option value="0">Guardar al máximo</option>
+              </select>
+              <span class="mono" id="resReal" style="color:var(--muted-osc)"></span>
+              <button class="btn claro chico" id="btnCamara" onclick="prender()">Prender cámara</button>
+            </div>
+            <div class="escena" id="escena">
+              <video id="video" playsinline muted class="oculto"></video>
+              <canvas id="lienzoEdit" class="oculto"></canvas>
+              <div class="guia oculto" id="guia"></div>
+              <div class="flash" id="flash"></div>
+              <div class="apagado" id="apagado">
+                Conecta la cámara y dale <b>Prender cámara</b>.<br>
+                También puedes subir un archivo o capturar la firma.
+              </div>
+            </div>
+            <div class="editor oculto" id="editor">
+              <div class="rejilla">
+                <div class="ctrl"><label>Acercar <b id="vZoom">100%</b></label>
+                  <input type="range" id="edZoom" min="100" max="320" value="100"></div>
+                <div class="ctrl"><label>Girar <b id="vGiro">0°</b></label>
+                  <input type="range" id="edGiro" min="-20" max="20" step="0.5" value="0"></div>
+                <div class="ctrl"><label>Brillo <b id="vBrillo">100%</b></label>
+                  <input type="range" id="edBrillo" min="50" max="160" value="100"></div>
+                <div class="ctrl"><label>Contraste <b id="vContraste">100%</b></label>
+                  <input type="range" id="edContraste" min="50" max="160" value="100"></div>
+              </div>
+              <div class="fila">
+                <button onclick="girarCuarto(-90)" title="Girar a la izquierda">↺ 90°</button>
+                <button onclick="girarCuarto(90)" title="Girar a la derecha">↻ 90°</button>
+                <button onclick="reiniciarEditor()">Reiniciar</button>
+                <button onclick="verSalida()" title="Abre en otra pestaña exactamente el archivo que se va a guardar">Ver salida</button>
+                <span class="pista" id="pistaEditor">Arrastra la foto para acomodarla</span>
+              </div>
+            </div>
+
+            <div class="mandos">
+              <button class="disparo" id="btnDisparo" onclick="disparar()" title="Espacio"><i></i></button>
+              <button class="btn fuego" id="btnGuardar" onclick="guardarFoto()" disabled>Guardar y seguir</button>
+              <button class="btn claro" id="btnRepetir" onclick="repetir()" disabled>Repetir</button>
+              <button class="btn claro" onclick="document.getElementById('archivoFoto').click()">Subir archivo</button>
+              <button class="btn claro" onclick="abrirFirma()">Firma</button>
+              <span class="ayuda">Espacio dispara · Enter guarda · ↑ ↓ cambian de alumno</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ajustes -->
+      <!-- fotos tomadas -->
+      <div id="pFotos" class="oculto">
+        <div class="herramientas">
+          <div class="buscador"><input type="text" id="buscarGaleria" placeholder="Buscar alumno…" oninput="pintarGaleria()"></div>
+          <select id="filtroGaleria" style="width:auto" onchange="pintarGaleria()">
+            <option value="con">Con foto</option>
+            <option value="sin">Sin foto</option>
+            <option value="todos">Todos</option>
+          </select>
+          <label class="marca"><input type="checkbox" id="previaFondo" onchange="cambiarPrevia()"> Probar el fondo</label>
+          <label class="marca"><input type="checkbox" id="marcaAgua" onchange="cambiarMarca()"> Marca de agua</label>
+          <div class="crece"></div>
+          <span class="mono" id="conteoGaleria"></span>
+          <button class="btn claro chico" onclick="recargarGaleria()">Actualizar</button>
+        </div>
+        <div class="galeria" id="galeria"></div>
+      </div>
+
+      <div id="pAjustes" class="oculto">
+        <div class="fichas">
+          <div class="ficha">
+            <h3>Columnas</h3>
+            <p class="pie">Son las columnas del Excel que lee cardPresso.</p>
+            <ul class="cols" id="colsLista"></ul>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="nuevaCol" placeholder="Nombre de la columna">
+              <button class="btn claro" onclick="agregarColumna()">Agregar</button>
+            </div>
+          </div>
+
+          <div class="ficha">
+            <h3>Qué columna es qué</h3>
+            <p class="pie">Dónde escribo el nombre del archivo y de dónde saco el nombre para los archivos.</p>
+            <label class="campo"><span>Columna de la foto</span><select id="selFoto" onchange="guardarAjustes()"></select></label>
+            <label class="campo"><span>Columna de la firma</span><select id="selFirma" onchange="guardarAjustes()"></select></label>
+            <label class="campo"><span>Nombrar los archivos con</span><select id="selNombre" onchange="guardarAjustes()"></select></label>
+            <label class="campo"><span>Proporción de la foto</span>
+              <select id="selProp" onchange="guardarAjustes()">
+                <option value="3:4">Vertical 3:4 — lo normal</option>
+                <option value="2:3">Vertical 2:3 — alargada</option>
+                <option value="4:5">Vertical 4:5 — corta</option>
+                <option value="1:1">Cuadrada 1:1</option>
+                <option value="4:3">Horizontal 4:3</option>
+                <option value="3:2">Horizontal 3:2</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ficha">
+            <h3>Acabado de la foto</h3>
+            <p class="pie">Lo que se le hace al fondo al capturar. La imagen de fondo y la marca
+               de agua se eligen en <b>Fotos tomadas</b>, abriendo cualquier foto.</p>
+            <label class="campo"><span>Fondo</span>
+              <select id="selFondo" onchange="guardarAcabado()">
+                <option value="normal">Dejarlo como está</option>
+                <option value="quitar">Quitarlo — PNG transparente</option>
+                <option value="color">Cambiarlo por un color</option>
+              </select>
+            </label>
+            <div id="opsFondo" class="oculto">
+              <label class="campo"><span>Color del fondo nuevo</span>
+                <input type="color" id="colorFondo" value="#ffffff" onchange="guardarAcabado()"
+                       style="height:40px;padding:4px">
+              </label>
+              <label class="campo"><span>Cuánto recorta <b id="valTol">30</b></span>
+                <input type="range" id="tolFondo" min="6" max="90" value="30"
+                       oninput="document.getElementById('valTol').textContent=this.value;vistaAcabado()"
+                       onchange="guardarAcabado()">
+              </label>
+              <label class="campo"><span>Suavizar la orilla <b id="valSuave">12</b></span>
+                <input type="range" id="suaveFondo" min="0" max="60" value="12"
+                       oninput="document.getElementById('valSuave').textContent=this.value;vistaAcabado()"
+                       onchange="guardarAcabado()">
+              </label>
+              <p class="pie">Súbele a <b>Cuánto recorta</b> si queda fondo pegado; bájale si se
+                 come el pelo o el uniforme. Míralo con <b>Ver salida</b> en la sesión de fotos.</p>
+            </div>
+          </div>
+
+          <div class="ficha">
+            <h3>Excel y carpeta</h3>
+            <p class="pie">El Excel se guarda en la carpeta del nivel, junto a <b>fotos</b> y <b>firmas</b>.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" onclick="exportar()">Exportar a Drive</button>
+              <button class="btn claro" onclick="descargarLocal()">Descargar aquí</button>
+              <button class="btn claro" onclick="abrirCarpetaNivel()">Abrir carpeta</button>
+            </div>
+            <p class="pie" style="margin:14px 0 0" id="ultimoExport"></p>
+          </div>
+
+          <div class="ficha">
+            <h3>Ficha de datos con QR</h3>
+            <p class="pie">Le da a cada alumno una página con sus datos de emergencia. El enlace
+               queda en la columna FICHA y de ahí sale el QR en cardPresso.</p>
+            <p class="pie">El logo, la contraseña y el correo son de la escuela entera: se manejan
+               mejor desde <b>Escuelas → Fichas QR</b>. Lo de aquí es para ajustar solo este nivel.</p>
+            <p id="estadoFicha" class="pie" style="margin-bottom:14px">Cargando…</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+              <button class="btn fuego" id="btnPublicar" onclick="publicarFichas()">Activar y publicar</button>
+              <button class="btn claro" onclick="CAMPOS_CTX=null;abrirCampos()">Editar campos</button>
+              <button class="btn claro" onclick="document.getElementById('archivoLogo').click()">Subir logo</button>
+            </div>
+            <label class="campo"><span>Contraseña del admin de la escuela</span>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="claveEscuela" placeholder="Mínimo 6 caracteres">
+                <button class="btn claro" onclick="guardarClaveEscuela()">Guardar</button>
+              </div>
+            </label>
+            <label class="campo"><span>Correo de la escuela (le llegan las solicitudes)</span>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="correoEscuela" placeholder="direccion@escuela.edu.mx">
+                <button class="btn claro" onclick="guardarCorreoEscuela()">Guardar</button>
+              </div>
+            </label>
+            <div id="enlacesFicha"></div>
+          </div>
+
+          <div class="ficha">
+            <h3>Zona de riesgo</h3>
+            <p class="pie">Borrar el nivel quita sus alumnos de la lista. Los archivos de Drive se quedan.</p>
+            <button class="btn peligro" onclick="eliminarNivel()">Eliminar este nivel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════ MODALES -->
+
+<!-- nuevo nivel -->
+<div class="velo" id="velNivel">
+  <div class="cuadro ancho">
+    <h2>Nuevo nivel</h2>
+    <p class="entrada" id="tNivelSub"></p>
+
+    <label class="campo"><span>Nombre del nivel</span>
+      <input type="text" id="nivelNombre" placeholder="PRIMARIA" autocomplete="off"></label>
+
+    <label class="campo" style="margin-bottom:8px"><span>Columnas del Excel</span></label>
+    <div class="listaCols" id="listaCols"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <input type="text" id="colExtra" placeholder="Agregar otra columna" style="max-width:230px">
+      <button class="btn claro" onclick="agregarColExtra()">Agregar</button>
+      <button class="btn claro chico" onclick="agregarColRapida('FOTO')">+ FOTO</button>
+      <button class="btn claro chico" onclick="agregarColRapida('FIRMA')">+ FIRMA</button>
+    </div>
+
+    <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
+      <p class="pie" style="color:var(--muted);font-size:13.5px;margin:0 0 10px">
+        ¿Tienes el Excel de la escuela? Tomo sus columnas y sus alumnos de una vez.
+        Si no, deja las de arriba y captura a mano después.</p>
+      <button class="btn claro" onclick="document.getElementById('archivoExcel').click()">
+        Traer de un Excel</button>
+      <span class="mono" id="archivoNombre" style="margin-left:10px;color:var(--muted)"></span>
+    </div>
+
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velNivel')">Cancelar</button>
+      <button class="btn fuego" id="btnCrearNivel" onclick="crearNivel()">Crear nivel</button>
+    </div>
+  </div>
+</div>
+
+<!-- campos de la ficha -->
+<div class="velo" id="velGrande">
+  <div class="cuadro grande">
+    <h2 id="grandeNombre"></h2>
+    <p class="entrada" id="grandeSub"></p>
+    <div class="taller">
+      <div class="caja"><canvas id="lienzoGrande"></canvas></div>
+      <div class="mandos">
+        <label class="campo"><span>Fondo</span>
+          <select id="edFondo" onchange="cambioEditor()">
+            <option value="normal">Dejarlo como está</option>
+            <option value="quitar">Quitarlo — transparente</option>
+            <option value="color">Color liso</option>
+            <option value="imagen">Una imagen</option>
+          </select>
+        </label>
+        <div id="edColorCaja" class="oculto">
+          <label class="campo"><span>Color</span>
+            <input type="color" id="edColor" value="#ffffff" onchange="cambioEditor()" style="height:38px;padding:3px">
+          </label>
+        </div>
+        <div id="edImagenCaja" class="oculto">
+          <div class="linea">
+            <button class="btn claro chico" onclick="document.getElementById('archivoFondo').click()">Subir imagen</button>
+            <select id="edModoImg" style="width:auto" onchange="cambioEditor()">
+              <option value="mosaico">Repetida en mosaico</option>
+              <option value="estirar">Una sola, estirada</option>
+            </select>
+          </div>
+          <label class="campo"><span>Tamaño del mosaico <b id="edValEscala">30</b></span>
+            <input type="range" id="edEscalaImg" min="8" max="100" value="30" oninput="cambioEditor()">
+          </label>
+        </div>
+        <div id="edRecorteCaja" class="oculto">
+          <label class="campo"><span>Cómo separa a la persona</span>
+            <select id="edMotor" onchange="cambioEditor()">
+              <option value="color">Por color de fondo — rápido</option>
+              <option value="ia">Con IA — respeta la ropa blanca</option>
+            </select>
+          </label>
+          <p class="pie" id="edEstadoIA" style="margin:0 0 6px"></p>
+          <div class="linea"><button class="btn claro chico" onclick="abrirModal()">Modelo de IA…</button></div>
+          <label class="campo"><span>Cuánto recorta <b id="edValTol">30</b></span>
+            <input type="range" id="edTol" min="6" max="120" value="30" oninput="cambioEditor()">
+          </label>
+          <label class="campo"><span>Suavizar orilla <b id="edValSuave">12</b></span>
+            <input type="range" id="edSuave" min="0" max="60" value="12" oninput="cambioEditor()">
+          </label>
+        </div>
+
+        <hr>
+
+        <label class="campo"><span>Marca de agua</span>
+          <select id="edMarca" onchange="cambioEditor()">
+            <option value="ninguna">Ninguna</option>
+            <option value="logo">El logo de la escuela</option>
+            <option value="imagen">Una imagen mía (PNG)</option>
+            <option value="texto">Texto</option>
+          </select>
+        </label>
+        <div id="edMarcaImgCaja" class="oculto">
+          <button class="btn claro chico" onclick="document.getElementById('archivoMarca').click()">Subir PNG</button>
+        </div>
+        <div id="edMarcaTextoCaja" class="oculto">
+          <input type="text" id="edTexto" placeholder="MUESTRA" oninput="cambioEditor()">
+        </div>
+        <div id="edMarcaOps" class="oculto">
+          <label class="campo"><span>Opacidad <b id="edValOpa">28</b>%</span>
+            <input type="range" id="edOpa" min="5" max="90" value="28" oninput="cambioEditor()">
+          </label>
+          <label class="campo"><span>Tamaño <b id="edValTam">33</b></span>
+            <input type="range" id="edTam" min="10" max="80" value="33" oninput="cambioEditor()">
+          </label>
+          <label class="campo"><span>Inclinación <b id="edValAng">-28</b>°</span>
+            <input type="range" id="edAng" min="-90" max="90" value="-28" oninput="cambioEditor()">
+          </label>
+        </div>
+        <p class="pie">La marca de agua es solo para ver y descargar. Nunca se graba
+           en el archivo de Drive que va a la credencial.</p>
+      </div>
+    </div>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velGrande')">Cerrar</button>
+      <button class="btn claro" onclick="repetirDesdeGaleria()">Repetir foto</button>
+      <button class="btn claro" onclick="descargarGrande()">Descargar</button>
+      <button class="btn claro" onclick="aplicarATodas()">Aplicar a todas</button>
+      <button class="btn fuego" id="btnGuardarFoto" onclick="guardarEnDrive()">Guardar esta en Drive</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="archivoFondo" accept="image/png,image/jpeg" style="display:none">
+<input type="file" id="archivoMarca" accept="image/png" style="display:none">
+
+<div class="velo" id="velEscuelaFicha">
+  <div class="cuadro ancho">
+    <h2 id="efNombre"></h2>
+    <p class="entrada">Lo de aquí vale para todos los niveles de la escuela. Si algún grupo
+       necesita algo distinto, se ajusta aparte en sus Ajustes.</p>
+    <p class="pie" id="efEstado">Cargando…</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0">
+      <button class="btn fuego" id="efPublicar" onclick="publicarTodaEscuela()">Publicar en todos los niveles</button>
+      <button class="btn claro" onclick="camposDeEscuela()">Editar campos</button>
+      <button class="btn claro" onclick="document.getElementById('archivoLogoEsc').click()">Subir logo</button>
+    </div>
+
+    <label class="campo"><span>Contraseña del admin de la escuela</span>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="efClave" placeholder="Mínimo 6 caracteres">
+        <button class="btn claro" onclick="guardarClaveEsc()">Guardar</button>
+      </div>
+    </label>
+    <label class="campo"><span>Correo de la escuela (le llegan las solicitudes)</span>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="efCorreo" placeholder="direccion@escuela.edu.mx">
+        <button class="btn claro" onclick="guardarCorreoEsc()">Guardar</button>
+      </div>
+    </label>
+    <label class="campo"><span>Admin de la escuela</span>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="efAdmin" readonly>
+        <button class="btn claro" onclick="copiar(document.getElementById('efAdmin').value)">Copiar</button>
+      </div>
+    </label>
+    <div id="efNiveles" class="pie" style="margin-top:14px"></div>
+
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velEscuelaFicha')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="archivoLogoEsc" accept="image/png,image/jpeg" style="display:none">
+
+<div class="velo" id="velModelo">
+  <div class="cuadro">
+    <h2>Modelo de IA</h2>
+    <p class="entrada">Se guarda dentro de este navegador. No se sube al repositorio
+       ni a Drive, y ninguna foto sale de aquí.</p>
+    <p class="pie" id="modeloEstado">Revisando…</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px">
+      <button class="btn claro" onclick="document.getElementById('archivoModelo').click()">Elegir archivo .onnx</button>
+      <button class="btn claro" onclick="bajarModelo()">Bajarlo de internet</button>
+      <button class="btn claro" onclick="quitarModelo()">Quitarlo</button>
+    </div>
+    <label class="campo"><span>De dónde bajarlo</span>
+      <input type="text" id="modeloUrl" placeholder="https://…/u2netp.onnx"></label>
+    <p class="pie">Modelos que sirven, todos Apache 2.0 y libres para uso comercial:
+       <b>u2netp</b> (4.6 MB, rápido), <b>u2net_human_seg</b> (176 MB, el mejor con personas),
+       <b>isnet-general-use-q8</b> (44 MB, con <code>MODELO_TIPO = 'isnet'</code>).</p>
+    <div class="pie-botones">
+      <button class="btn fuego" onclick="cerrar('velModelo')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="archivoModelo" accept=".onnx" style="display:none">
+
+<div class="velo" id="velCampos">
+  <div class="cuadro ancho">
+    <h2>Campos de la ficha</h2>
+    <p class="entrada">Lo que se le pregunta al papá, y qué se ve al escanear el QR sin autorización.
+       Los cambios se aplican al momento, no hace falta volver a publicar.</p>
+    <div class="alcance">
+      <button type="button" id="alcEscuela" onclick="ponerAlcance(false)">Para toda la escuela</button>
+      <button type="button" id="alcNivel" onclick="ponerAlcance(true)">Solo este nivel</button>
+      <span class="nota" id="alcanceNota"></span>
+    </div>
+    <div id="listaCampos" style="max-height:46dvh;overflow:auto;padding-right:4px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="campoNuevo" placeholder="Nombre del campo nuevo" style="max-width:250px">
+      <select id="campoTipo" style="width:auto">
+        <option value="texto">Texto corto</option>
+        <option value="parrafo">Texto largo</option>
+        <option value="telefono">Teléfono</option>
+        <option value="lista">Lista de opciones</option>
+        <option value="casilla">Sí o no</option>
+      </select>
+      <button class="btn claro" onclick="agregarCampo()">Agregar</button>
+    </div>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="CAMPOS_CTX=null;cerrar('velCampos')">Cancelar</button>
+      <button class="btn claro" onclick="restaurarCampos()">Volver a los de fábrica</button>
+      <button class="btn fuego" id="btnGuardarCampos" onclick="guardarCampos()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- nuevo alumno -->
+<div class="velo" id="velAlumno">
+  <div class="cuadro">
+    <h2>Agregar alumno</h2>
+    <p class="entrada" id="alumnoSub"></p>
+    <div id="camposAlumno"></div>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velAlumno')">Cerrar</button>
+      <button class="btn fuego" id="btnGuardarAlumno" onclick="guardarAlumnoNuevo()">Agregar y seguir</button>
+    </div>
+  </div>
+</div>
+
+<!-- importar a nivel existente -->
+<div class="velo" id="velImportar">
+  <div class="cuadro">
+    <h2>Importar alumnos</h2>
+    <p class="entrada">Uso los encabezados del archivo para acomodar los datos en las columnas que ya tienes. Lo que no coincida lo dejo en blanco.</p>
+    <button class="btn claro" onclick="document.getElementById('archivoExcel2').click()">Elegir archivo .xlsx o .csv</button>
+    <p class="mono" id="resumenImport" style="color:var(--muted);margin-top:14px"></p>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velImportar')">Cancelar</button>
+      <button class="btn fuego" id="btnImportar" onclick="importarExistente()" disabled>Agregar alumnos</button>
+    </div>
+  </div>
+</div>
+
+<!-- firma -->
+<div class="velo" id="velFirma">
+  <div class="cuadro ancho">
+    <h2>Firma</h2>
+    <p class="entrada" id="firmaDe"></p>
+    <canvas class="firma-caja" id="lienzo" height="260"></canvas>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velFirma')">Cancelar</button>
+      <button class="btn claro" onclick="limpiarFirma()">Borrar</button>
+      <button class="btn fuego" onclick="guardarFirma()">Guardar firma</button>
+    </div>
+  </div>
+</div>
+
+<!-- preguntar -->
+<div class="velo" id="velPregunta">
+  <div class="cuadro">
+    <h2 id="pregTitulo"></h2>
+    <p class="entrada" id="pregTexto"></p>
+    <input type="text" id="pregValor" autocomplete="off">
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velPregunta')">Cancelar</button>
+      <button class="btn fuego" id="pregOk">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="aviso" id="aviso"></div>
+
+<input type="file" id="archivoExcel" accept=".xlsx,.xls,.csv" style="display:none">
+<input type="file" id="archivoExcel2" accept=".xlsx,.xls,.csv" style="display:none">
+<input type="file" id="archivoFoto" accept="image/*" style="display:none">
+<input type="file" id="archivoLogo" accept="image/png,image/jpeg" style="display:none">
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════ estado */
+
+var S = {
+  pass: '',
+  escuelas: [],
+  nivel: null,        // {id,nombre,escuela,columnas,colFoto,colFirma,colNombre,proporcion,carpeta}
+  alumnos: [],        // [{_id, v:[...]}]
+  sel: null,          // _id del alumno activo en la sesión de fotos
+  soloFaltan: false,
+  stream: null,
+  toma: null,         // dataURL de la foto recién tomada
+  raiz: '',
+  origen: 'manual',
+  importadas: null,   // {cabeceras:[], filas:[[]]}
+  pendiente: {}       // _id+tipo -> true mientras está en la cola
+};
+
+function guardaLocal(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+function leeLocal(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
+
+/* ══════════════════════════════════════════════════════════════════ api */
+
+function api(accion, datos) {
+  var payload = Object.assign({ accion: accion, pass: S.pass }, datos || {});
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function (r) { return r.text(); }).then(function (t) {
+    var d;
+    try { d = JSON.parse(t); }
+    catch (e) { throw new Error('El servidor respondió algo raro. Revisa la URL del web app.'); }
+    if (!d.ok) throw new Error(d.error || 'Algo salió mal.');
+    return d;
+  });
+}
+
+function decir(texto, mal) {
+  var a = document.getElementById('aviso');
+  a.textContent = texto;
+  a.className = 'aviso on' + (mal ? ' mal' : '');
+  clearTimeout(decir.t);
+  decir.t = setTimeout(function () { a.className = 'aviso'; }, mal ? 5200 : 2600);
+}
+
+function fallo(err) { decir(String(err.message || err), true); }
+
+/* ══════════════════════════════════════════════════════════════ entrada */
+
+(function () {
+  var teclas = ['1','2','3','4','5','6','7','8','9','borrar','0','entrar'];
+  var cont = document.getElementById('teclado');
+  teclas.forEach(function (t) {
+    var b = document.createElement('button');
+    b.textContent = t === 'borrar' ? '←' : t === 'entrar' ? '✓' : t;
+    if (t === 'entrar') b.style.color = 'var(--accent)';
+    b.onclick = function () { tecla(t); };
+    cont.appendChild(b);
+  });
+})();
+
+var pin = '';
+
+function tecla(t) {
+  if (t === 'borrar') pin = pin.slice(0, -1);
+  else if (t === 'entrar') return probar();
+  else if (pin.length < 12) pin += t;
+  pintarPuntos();
+  if (pin.length === 6) probar();
+}
+
+function pintarPuntos() {
+  var p = document.getElementById('puntos');
+  p.className = 'puntos';
+  [].forEach.call(p.children, function (i, n) { i.className = n < pin.length ? 'on' : ''; });
+}
+
+document.addEventListener('keydown', function (e) {
+  if (!document.getElementById('puerta').classList.contains('oculto')) {
+    if (/^[0-9]$/.test(e.key)) tecla(e.key);
+    else if (e.key === 'Backspace') tecla('borrar');
+    else if (e.key === 'Enter') tecla('entrar');
+  }
+});
+
+function probar() {
+  if (!pin) return;
+  var intento = pin;
+  document.getElementById('avisoMal').textContent = 'Entrando…';
+  S.pass = intento;
+  api('entrar', {}).then(function (d) {
+    guardaLocal('alumna_pass', intento);
+    S.raiz = d.raiz || '';
+    entrar();
+  }).catch(function (err) {
+    S.pass = '';
+    pin = '';
+    document.getElementById('puntos').className = 'puntos mal';
+    document.getElementById('avisoMal').textContent = String(err.message || err);
+    setTimeout(pintarPuntos, 500);
+  });
+}
+
+function entrar() {
+  document.getElementById('puerta').classList.add('oculto');
+  document.getElementById('app').classList.remove('oculto');
+  cargarEscuelas();
+  arrancarCola();
+}
+
+function salir() {
+  guardaLocal('alumna_pass', '');
+  location.reload();
+}
+
+(function () {
+  var guardado = leeLocal('alumna_pass');
+  if (!guardado) return;
+  S.pass = guardado;
+  api('entrar', {}).then(function (d) { S.raiz = d.raiz || ''; entrar(); })
+    .catch(function () { S.pass = ''; });
+})();
+
+/* ═════════════════════════════════════════════════════════════ escuelas */
+
+function cargarEscuelas() {
+  return api('escuelas').then(function (d) {
+    S.escuelas = d.escuelas;
+    S.raiz = d.raiz;
+    pintarEscuelas();
+  }).catch(fallo);
+}
+
+function pintarEscuelas() {
+  var cont = document.getElementById('listaEscuelas');
+  cont.innerHTML = '';
+
+  S.escuelas.forEach(function (e) {
+    var card = document.createElement('div');
+    card.className = 'escuela';
+
+    var niveles = e.niveles.map(function (n) {
+      return '<li>' +
+        '<button class="abrir" onclick="abrirNivel(\'' + n.id + '\')">' + esc(n.nombre) + '</button>' +
+        '<span class="cuenta">' + n.alumnos + ' alumno' + (n.alumnos === 1 ? '' : 's') + '</span>' +
+        '</li>';
+    }).join('');
+
+    var conFichas = e.niveles.filter(function (n) { return n.fichas; }).length;
+
+    card.innerHTML =
+      '<header><h2>' + esc(e.nombre) + '</h2>' +
+      '<button class="icono" title="Renombrar" onclick="renombrarEscuela(\'' + e.id + '\')">✎</button>' +
+      '<button class="icono rojo" title="Eliminar" onclick="eliminarEscuela(\'' + e.id + '\')">✕</button>' +
+      '</header>' +
+      (niveles ? '<ul class="niveles">' + niveles + '</ul>'
+               : '<p class="vacio">Todavía no tiene niveles.</p>') +
+      '<footer>' +
+        '<button class="btn claro chico" onclick="pedirNivel(\'' + e.id + '\')">Agregar nivel</button>' +
+        (e.niveles.length
+          ? '<button class="btn claro chico" onclick="abrirEscuelaFicha(\'' + e.id + '\')">Fichas QR</button>' +
+            (conFichas && conFichas < e.niveles.length
+              ? '<span class="pendiente">' + (e.niveles.length - conFichas) + ' sin fichas</span>'
+              : !conFichas ? '<span class="pendiente">sin activar</span>' : '')
+          : '') +
+      '</footer>';
+
+    cont.appendChild(card);
+  });
+
+  var mas = document.createElement('button');
+  mas.className = 'fantasma';
+  mas.textContent = '+ Nueva escuela';
+  mas.onclick = pedirEscuela;
+  cont.appendChild(mas);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function preguntar(titulo, texto, valor, cb) {
+  document.getElementById('pregTitulo').textContent = titulo;
+  document.getElementById('pregTexto').textContent = texto || '';
+  var campo = document.getElementById('pregValor');
+  campo.value = valor || '';
+  abrir('velPregunta');
+  setTimeout(function () { campo.focus(); campo.select(); }, 60);
+  var ok = document.getElementById('pregOk');
+  ok.onclick = function () { cerrar('velPregunta'); cb(campo.value.trim()); };
+  campo.onkeydown = function (e) { if (e.key === 'Enter') ok.click(); };
+}
+
+function pedirEscuela() {
+  preguntar('Nueva escuela', 'Como quieres que se llame la carpeta en Drive.', '', function (v) {
+    if (!v) return;
+    api('crearEscuela', { nombre: v }).then(function () {
+      decir('Escuela creada');
+      cargarEscuelas();
+    }).catch(fallo);
+  });
+}
+
+function renombrarEscuela(id) {
+  var e = S.escuelas.filter(function (x) { return x.id === id; })[0];
+  preguntar('Renombrar escuela', 'También cambia el nombre de la carpeta en Drive.', e.nombre, function (v) {
+    if (!v) return;
+    api('renombrarEscuela', { escuelaId: id, nombre: v }).then(cargarEscuelas).catch(fallo);
+  });
+}
+
+function eliminarEscuela(id) {
+  var e = S.escuelas.filter(function (x) { return x.id === id; })[0];
+  if (!confirm('Quitar "' + e.nombre + '" y sus niveles de la lista?\n\nLas fotos y el Excel se quedan en Drive.')) return;
+  api('eliminarEscuela', { escuelaId: id }).then(function () {
+    decir('Escuela eliminada');
+    cargarEscuelas();
+  }).catch(fallo);
+}
+
+/* ════════════════════════════════════════════════════════ crear nivel */
+
+var borrador = { escuelaId: '', columnas: [] };
+
+var EF = { id: null, datos: null };
+
+function abrirEscuelaFicha(escuelaId) {
+  EF.id = escuelaId; EF.datos = null;
+  var e = S.escuelas.filter(function (x) { return x.id === escuelaId; })[0];
+  document.getElementById('efNombre').textContent = e ? e.nombre : 'Escuela';
+  document.getElementById('efEstado').textContent = 'Cargando…';
+  document.getElementById('efNiveles').textContent = '';
+  abrir('velEscuelaFicha');
+  cargarEscuelaFicha();
+}
+
+function cargarEscuelaFicha() {
+  return api('escuelaFicha', { escuelaId: EF.id }).then(function (d) {
+    EF.datos = d;
+    var faltan = [];
+    if (!d.logo) faltan.push('falta el logo');
+    if (!d.tieneClave) faltan.push('falta la contraseña del admin');
+    if (!d.correo) faltan.push('falta el correo para los avisos');
+
+    document.getElementById('efEstado').innerHTML =
+      '<b>' + d.conFicha + ' de ' + d.niveles.length + ' niveles</b> con ficha QR · ' +
+      d.llenas + ' de ' + d.totales + ' fichas llenas' +
+      (faltan.length ? ' · ' + faltan.join(', ') : '');
+
+    document.getElementById('efPublicar').textContent =
+      d.conFicha === d.niveles.length ? 'Volver a publicar en todos' : 'Publicar en todos los niveles';
+    document.getElementById('efCorreo').value = d.correo || '';
+    document.getElementById('efClave').value = '';
+    document.getElementById('efClave').placeholder = d.tieneClave ? '••••••  (ya hay una)' : 'Mínimo 6 caracteres';
+    document.getElementById('efAdmin').value = d.admin || '';
+
+    var sin = d.niveles.filter(function (n) { return !n.fichas; });
+    document.getElementById('efNiveles').textContent = sin.length
+      ? 'Todavía sin ficha: ' + sin.map(function (n) { return n.nombre; }).join(', ')
+      : 'Todos los niveles ya tienen su ficha.';
+  }).catch(fallo);
+}
+
+function publicarTodaEscuela() {
+  cerrar('velEscuelaFicha');
+  fichasEscuela(EF.id);
+}
+
+function guardarClaveEsc() {
+  var v = document.getElementById('efClave').value.trim();
+  api('claveEscuela', { escuelaId: EF.id, clave: v }).then(function () {
+    decir(v ? 'Contraseña guardada' : 'Contraseña quitada');
+    cargarEscuelaFicha();
+  }).catch(fallo);
+}
+
+function guardarCorreoEsc() {
+  api('correoEscuela', { escuelaId: EF.id, correo: document.getElementById('efCorreo').value.trim() })
+    .then(function () { decir('Correo guardado'); cargarEscuelaFicha(); }).catch(fallo);
+}
+
+document.getElementById('archivoLogoEsc').addEventListener('change', function (ev) {
+  var f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  var lector = new FileReader();
+  lector.onload = function (e) {
+    reducirPng(e.target.result, 600, function (b64) {
+      decir('Subiendo el logo…');
+      api('subirLogo', { escuelaId: EF.id, b64: b64 }).then(function () {
+        decir('Logo subido. Vuelve a publicar para que salga en las páginas.');
+        cargarEscuelaFicha();
+      }).catch(fallo);
+    });
+  };
+  lector.readAsDataURL(f);
+});
+
+function camposDeEscuela() {
+  CAMPOS_CTX = { escuelaId: EF.id };
+  abrirCampos();
+}
+
+function fichasEscuela(escuelaId) {
+  var e = S.escuelas.filter(function (x) { return x.id === escuelaId; })[0];
+  if (!e || !e.niveles.length) return;
+
+  if (!confirm('Se les crea la ficha QR a los ' + e.niveles.length + ' niveles de ' + e.nombre +
+               ', y se suben sus páginas.\n\nLos alumnos que ya tienen su enlace lo conservan. ' +
+               'Puede tardar un par de minutos.')) return;
+
+  var lista = e.niveles.slice();
+  var listos = 0, fallidos = [];
+
+  function siguiente() {
+    if (!lista.length) {
+      cargarEscuelas();
+      if (fallidos.length) decir('Quedaron fuera: ' + fallidos.join(', '), true);
+      else decir('Listo. Los ' + listos + ' niveles de ' + e.nombre + ' ya tienen ficha QR.');
+      return;
+    }
+    var n = lista.shift();
+    decir('Publicando ' + n.nombre + '… (' + (listos + fallidos.length + 1) + ' de ' + e.niveles.length + ')');
+    api('publicar', { nivelId: n.id })
+      .then(function () { listos++; siguiente(); })
+      .catch(function () { fallidos.push(n.nombre); siguiente(); });
+  }
+  siguiente();
+}
+
+function pedirNivel(escuelaId) {
+  var e = S.escuelas.filter(function (x) { return x.id === escuelaId; })[0];
+  borrador = { escuelaId: escuelaId, columnas: [] };
+  S.importadas = null;
+  document.getElementById('tNivelSub').textContent = 'Dentro de ' + e.nombre + '.';
+  document.getElementById('nivelNombre').value = '';
+  document.getElementById('archivoNombre').textContent = '';
+  borrador.columnas = ['NOMBRE', 'GRADO', 'GRUPO', 'FOTO'].map(function (c) {
+    return { nombre: c, usar: true, fuente: null };
+  });
+  pintarColumnas();
+  abrir('velNivel');
+  setTimeout(function () { document.getElementById('nivelNombre').focus(); }, 60);
+}
+
+function pintarColumnas() {
+  var cont = document.getElementById('listaCols');
+  if (!borrador.columnas.length) {
+    cont.innerHTML = '<p class="vacio">Agrega al menos una columna.</p>';
+    return;
+  }
+  cont.innerHTML = '';
+  borrador.columnas.forEach(function (c, i) {
+    var fila = document.createElement('div');
+    fila.className = 'lc';
+    fila.innerHTML =
+      '<input type="checkbox" ' + (c.usar ? 'checked' : '') + ' onchange="borrador.columnas[' + i + '].usar=this.checked">' +
+      '<input type="text" value="' + esc(c.nombre) + '" oninput="borrador.columnas[' + i + '].nombre=this.value">' +
+      (c.fuente ? '<span class="fuente">← ' + esc(c.fuente) + '</span>' : '') +
+      '<button class="quitar" title="Quitar" onclick="quitarColBorrador(' + i + ')">✕</button>';
+    cont.appendChild(fila);
+  });
+}
+
+function quitarColBorrador(i) { borrador.columnas.splice(i, 1); pintarColumnas(); }
+
+function agregarColExtra() {
+  var campo = document.getElementById('colExtra');
+  var v = campo.value.trim();
+  if (!v) return;
+  borrador.columnas.push({ nombre: v.toUpperCase(), usar: true, fuente: null });
+  campo.value = '';
+  pintarColumnas();
+}
+
+function agregarColRapida(n) {
+  if (borrador.columnas.some(function (c) { return c.nombre.toUpperCase() === n; })) { decir('Ya la tienes'); return; }
+  borrador.columnas.push({ nombre: n, usar: true, fuente: null });
+  pintarColumnas();
+}
+
+document.getElementById('colExtra').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') agregarColExtra();
+});
+
+/* ---------------------------------------------------------- leer excel */
+
+function leerLibro(file) {
+  return new Promise(function (res, rej) {
+    var lector = new FileReader();
+    lector.onload = function (e) {
+      try {
+        var libro = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false, raw: false });
+        var hoja = libro.Sheets[libro.SheetNames[0]];
+        var matriz = XLSX.utils.sheet_to_json(hoja, { header: 1, blankrows: false, defval: '', raw: false });
+        if (!matriz.length) return rej(new Error('Ese archivo está vacío.'));
+        var cabeceras = matriz[0].map(function (c, i) {
+          return String(c || '').trim() || ('COLUMNA ' + (i + 1));
+        });
+        var filas = matriz.slice(1).filter(function (f) {
+          return f.some(function (c) { return String(c || '').trim(); });
+        }).map(function (f) {
+          var out = [];
+          for (var i = 0; i < cabeceras.length; i++) out.push(String(f[i] == null ? '' : f[i]).trim());
+          return out;
+        });
+        res({ cabeceras: cabeceras, filas: filas });
+      } catch (err) { rej(new Error('No pude leer ese archivo.')); }
+    };
+    lector.onerror = function () { rej(new Error('No pude abrir el archivo.')); };
+    lector.readAsArrayBuffer(file);
+  });
+}
+
+document.getElementById('archivoExcel').addEventListener('change', function (ev) {
+  var f = ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  leerLibro(f).then(function (r) {
+    S.importadas = r;
+    document.getElementById('archivoNombre').textContent = f.name + ' · ' + r.filas.length + ' filas';
+    var extras = borrador.columnas.filter(function (c) {
+      return !c.fuente && ['FOTO', 'FIRMA'].indexOf(c.nombre.toUpperCase()) >= 0;
+    });
+    borrador.columnas = r.cabeceras.map(function (c) {
+      return { nombre: c.toUpperCase(), usar: true, fuente: c };
+    });
+    extras.forEach(function (c) {
+      if (!borrador.columnas.some(function (x) { return x.nombre === c.nombre; })) borrador.columnas.push(c);
+    });
+    if (!borrador.columnas.some(function (c) { return c.nombre === 'FOTO'; })) {
+      borrador.columnas.push({ nombre: 'FOTO', usar: true, fuente: null });
+    }
+    pintarColumnas();
+  }).catch(fallo);
+});
+
+function crearNivel() {
+  var nombre = document.getElementById('nivelNombre').value.trim();
+  var usadas = borrador.columnas.filter(function (c) { return c.usar && c.nombre.trim(); });
+  if (!usadas.length) { decir('Deja al menos una columna', true); return; }
+
+  var nombres = usadas.map(function (c) { return c.nombre.trim(); });
+  var vistas = {};
+  for (var i = 0; i < nombres.length; i++) {
+    var k = nombres[i].toUpperCase();
+    if (vistas[k]) { decir('Tienes dos columnas llamadas ' + nombres[i], true); return; }
+    vistas[k] = true;
+  }
+
+  var colFoto = nombres.filter(function (n) { return /FOTO|IMAGEN|FOTOGRAF/i.test(n); })[0] || '';
+  var colFirma = nombres.filter(function (n) { return /FIRMA/i.test(n); })[0] || '';
+  var colNombre = nombres.filter(function (n) { return /NOMBRE|ALUMNO/i.test(n); })[0] || nombres[0];
+
+  var btn = document.getElementById('btnCrearNivel');
+  btn.disabled = true; btn.textContent = 'Creando…';
+
+  api('crearNivel', {
+    escuelaId: borrador.escuelaId, nombre: nombre, columnas: nombres,
+    colFoto: colFoto, colFirma: colFirma, colNombre: colNombre, proporcion: '3:4'
+  }).then(function (d) {
+    if (S.importadas) {
+      var filas = S.importadas.filas.map(function (f) {
+        return usadas.map(function (c) {
+          if (!c.fuente) return '';
+          var idx = S.importadas.cabeceras.indexOf(c.fuente);
+          return idx >= 0 ? f[idx] : '';
+        });
+      });
+      return subirEnTandas(d.id, filas).then(function () { return d; });
+    }
+    return d;
+  }).then(function (d) {
+    btn.disabled = false; btn.textContent = 'Crear nivel';
+    cerrar('velNivel');
+    decir('Nivel creado');
+    cargarEscuelas();
+    abrirNivel(d.id);
+  }).catch(function (err) {
+    btn.disabled = false; btn.textContent = 'Crear nivel';
+    fallo(err);
+  });
+}
+
+function subirEnTandas(nivelId, filas) {
+  var TANDA = 120;
+  var tandas = [];
+  for (var i = 0; i < filas.length; i += TANDA) tandas.push(filas.slice(i, i + TANDA));
+  var hecho = 0;
+  return tandas.reduce(function (cadena, tanda) {
+    return cadena.then(function () {
+      return api('agregarAlumnos', { nivelId: nivelId, filas: tanda }).then(function () {
+        hecho += tanda.length;
+        decir('Subiendo alumnos… ' + hecho + ' de ' + filas.length);
+      });
+    });
+  }, Promise.resolve());
+}
+
+/* ══════════════════════════════════════════════════════════════ nivel */
+
+function abrirNivel(id) {
+  api('nivel', { nivelId: id }).then(function (d) {
+    S.nivel = d.nivel;
+    S.alumnos = d.alumnos;
+    S.sel = S.alumnos.length ? S.alumnos[0]._id : null;
+    document.getElementById('vEscuelas').classList.add('oculto');
+    document.getElementById('vNivel').classList.remove('oculto');
+    document.getElementById('tituloNivel').textContent = d.nivel.nombre;
+    document.getElementById('subtituloNivel').textContent = d.nivel.escuela;
+    document.getElementById('migas').innerHTML =
+      '<button onclick="volverEscuelas()">Escuelas</button> / <b>' +
+      esc(d.nivel.escuela) + ' · ' + esc(d.nivel.nombre) + '</b>';
+    cargarAssets();
+    verPestana('alumnos');
+    pintarTabla();
+    pintarAjustes();
+    cargarFicha();
+  }).catch(fallo);
+}
+
+function volverEscuelas() {
+  apagar();
+  S.nivel = null;
+  document.getElementById('vNivel').classList.add('oculto');
+  document.getElementById('vEscuelas').classList.remove('oculto');
+  document.getElementById('migas').innerHTML = '';
+  cargarEscuelas();
+}
+
+function verPestana(cual) {
+  ['alumnos', 'camara', 'fotos', 'ajustes'].forEach(function (p) {
+    var tab = document.getElementById('tab' + p.charAt(0).toUpperCase() + p.slice(1));
+    var panel = document.getElementById('p' + p.charAt(0).toUpperCase() + p.slice(1));
+    tab.classList.toggle('on', p === cual);
+    panel.classList.toggle('oculto', p !== cual);
+  });
+  if (cual === 'camara') {
+    document.getElementById('propFoto').value = S.nivel.proporcion || '3:4';
+    S.soloFaltan = leeLocal('alumna_filtro') === '1';
+    pintarRollo();
+    dibujarGuia();
+  }
+  else {
+    apagarSiSobra(cual);
+    if (cual === 'fotos') pintarGaleria();
+  }
+}
+
+function apagarSiSobra(cual) { if (cual !== 'camara' && S.stream) apagar(); }
+
+/* --------------------------------------------------------------- tabla */
+
+function idxFoto() { return S.nivel.columnas.indexOf(S.nivel.colFoto); }
+function idxFirma() { return S.nivel.columnas.indexOf(S.nivel.colFirma); }
+
+function filtrados(texto) {
+  var q = (texto || '').toLowerCase().trim();
+  if (!q) return S.alumnos;
+  return S.alumnos.filter(function (a) {
+    return a.v.join(' ').toLowerCase().indexOf(q) >= 0;
+  });
+}
+
+function pintarTabla() {
+  var n = S.nivel;
+  var lista = filtrados(document.getElementById('buscar').value);
+  var fi = idxFoto(), fr = idxFirma();
+
+  var html = '<thead><tr><th></th>';
+  n.columnas.forEach(function (c) { html += '<th>' + esc(c) + '</th>'; });
+  html += '<th></th></tr></thead><tbody>';
+
+  lista.forEach(function (a, i) {
+    html += '<tr data-id="' + a._id + '"><td class="num mono">' + (i + 1) + '</td>';
+    a.v.forEach(function (val, c) {
+      if (c === fi || c === fr) {
+        var enCola = S.pendiente[a._id + (c === fi ? 'foto' : 'firma')];
+        var clase = enCola ? 'cola' : (val ? 'lista' : '');
+        html += '<td><div class="celda" onclick="editar(\'' + a._id + '\',' + c + ',this)">' +
+          '<span class="marcaimg ' + clase + '"><span class="luz"></span>' +
+          esc(enCola ? 'subiendo…' : (val || '—')) + '</span></div></td>';
+      } else {
+        html += '<td><div class="celda" onclick="editar(\'' + a._id + '\',' + c + ',this)">' +
+          esc(val || '') + '</div></td>';
+      }
+    });
+    html += '<td><div class="acciones">' +
+      '<button class="icono" title="Tomar foto" onclick="irAFoto(\'' + a._id + '\')">◉</button>' +
+      '<button class="icono rojo" title="Eliminar" onclick="eliminarAlumno(\'' + a._id + '\')">✕</button>' +
+      '</div></td></tr>';
+  });
+
+  html += '</tbody>';
+  document.getElementById('tabla').innerHTML = html;
+
+  var conFoto = fi >= 0 ? S.alumnos.filter(function (a) { return a.v[fi]; }).length : 0;
+  document.getElementById('conteo').textContent =
+    S.alumnos.length + ' alumnos' + (fi >= 0 ? ' · ' + conFoto + ' con foto' : '');
+}
+
+function editar(id, col, celda) {
+  if (celda.querySelector('input')) return;
+  var a = buscarAlumno(id);
+  var valor = a.v[col];
+  celda.innerHTML = '';
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = valor;
+  celda.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  var cerrado = false;
+  function terminar(guardar) {
+    if (cerrado) return;
+    cerrado = true;
+    var nuevo = inp.value;
+    if (guardar && nuevo !== valor) {
+      a.v[col] = nuevo;
+      var cambio = {};
+      cambio[S.nivel.columnas[col]] = nuevo;
+      api('editarAlumno', { nivelId: S.nivel.id, alumnoId: id, valores: cambio })
+        .catch(function (err) { a.v[col] = valor; fallo(err); pintarTabla(); });
+    }
+    pintarTabla();
+  }
+  inp.onblur = function () { terminar(true); };
+  inp.onkeydown = function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); terminar(true); }
+    if (e.key === 'Escape') { e.preventDefault(); terminar(false); }
+  };
+}
+
+function buscarAlumno(id) {
+  return S.alumnos.filter(function (a) { return a._id === id; })[0];
+}
+
+function camposCapturables() {
+  var automaticas = [S.nivel.colFoto, S.nivel.colFirma, 'FICHA'];
+  return S.nivel.columnas.map(function (c, i) { return { nombre: c, i: i }; })
+    .filter(function (c) { return automaticas.indexOf(c.nombre) < 0; });
+}
+
+function agregarFilaVacia() {
+  var campos = camposCapturables();
+  if (!campos.length) { decir('Este nivel no tiene columnas para capturar', true); return; }
+
+  document.getElementById('alumnoSub').textContent = S.nivel.escuela + ' · ' + S.nivel.nombre;
+  var cont = document.getElementById('camposAlumno');
+  cont.innerHTML = campos.map(function (c) {
+    return '<label class="campo"><span>' + esc(c.nombre) + '</span>' +
+      '<input type="text" data-col="' + c.i + '" autocomplete="off"></label>';
+  }).join('');
+
+  cont.querySelectorAll('input').forEach(function (inp, k, todos) {
+    inp.onkeydown = function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (k + 1 < todos.length) todos[k + 1].focus();
+      else guardarAlumnoNuevo();
+    };
+  });
+
+  abrir('velAlumno');
+  setTimeout(function () { var p = cont.querySelector('input'); if (p) p.focus(); }, 60);
+}
+
+function guardarAlumnoNuevo() {
+  var cont = document.getElementById('camposAlumno');
+  var fila = S.nivel.columnas.map(function () { return ''; });
+  var algo = false;
+  cont.querySelectorAll('input').forEach(function (inp) {
+    var v = inp.value.trim();
+    fila[Number(inp.dataset.col)] = v;
+    if (v) algo = true;
+  });
+  if (!algo) { decir('Llena al menos un campo', true); return; }
+
+  var b = document.getElementById('btnGuardarAlumno');
+  b.disabled = true; b.textContent = 'Guardando…';
+
+  api('agregarAlumnos', { nivelId: S.nivel.id, filas: [fila] }).then(function (d) {
+    S.alumnos.push({ _id: d.ids[0], v: fila.slice() });
+    pintarTabla();
+    b.disabled = false; b.textContent = 'Agregar y seguir';
+    cont.querySelectorAll('input').forEach(function (inp) { inp.value = ''; });
+    var p = cont.querySelector('input');
+    if (p) p.focus();
+    decir('Agregado. Van ' + S.alumnos.length + '.');
+  }).catch(function (err) {
+    b.disabled = false; b.textContent = 'Agregar y seguir';
+    fallo(err);
+  });
+}
+
+function eliminarAlumno(id) {
+  var a = buscarAlumno(id);
+  if (!confirm('Eliminar a "' + (a.v[0] || 'este alumno') + '"?')) return;
+  api('eliminarAlumno', { nivelId: S.nivel.id, alumnoId: id, borrarImagenes: true }).then(function () {
+    S.alumnos = S.alumnos.filter(function (x) { return x._id !== id; });
+    if (S.sel === id) S.sel = S.alumnos.length ? S.alumnos[0]._id : null;
+    pintarTabla(); pintarRollo();
+  }).catch(fallo);
+}
+
+/* ------------------------------------------------ importar a existente */
+
+function abrirImportarExistente() {
+  S.importadas = null;
+  document.getElementById('resumenImport').textContent = '';
+  document.getElementById('btnImportar').disabled = true;
+  abrir('velImportar');
+}
+
+document.getElementById('archivoExcel2').addEventListener('change', function (ev) {
+  var f = ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  leerLibro(f).then(function (r) {
+    S.importadas = r;
+    var comunes = r.cabeceras.filter(function (c) {
+      return S.nivel.columnas.some(function (x) { return x.toUpperCase() === c.toUpperCase(); });
+    });
+    document.getElementById('resumenImport').textContent =
+      f.name + ' · ' + r.filas.length + ' filas · coinciden ' + comunes.length + ' de ' +
+      r.cabeceras.length + ' columnas: ' + (comunes.join(', ') || 'ninguna');
+    document.getElementById('btnImportar').disabled = false;
+  }).catch(fallo);
+});
+
+function importarExistente() {
+  if (!S.importadas) return;
+  var mapa = S.nivel.columnas.map(function (col) {
+    for (var i = 0; i < S.importadas.cabeceras.length; i++) {
+      if (S.importadas.cabeceras[i].toUpperCase() === col.toUpperCase()) return i;
+    }
+    return -1;
+  });
+  var filas = S.importadas.filas.map(function (f) {
+    return mapa.map(function (i) { return i >= 0 ? f[i] : ''; });
+  });
+  var btn = document.getElementById('btnImportar');
+  btn.disabled = true; btn.textContent = 'Subiendo…';
+  subirEnTandas(S.nivel.id, filas).then(function () {
+    btn.disabled = false; btn.textContent = 'Agregar alumnos';
+    cerrar('velImportar');
+    decir(filas.length + ' alumnos agregados');
+    abrirNivel(S.nivel.id);
+  }).catch(function (err) {
+    btn.disabled = false; btn.textContent = 'Agregar alumnos';
+    fallo(err);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════ sesión de fotos */
+
+function irAFoto(id) { S.sel = id; verPestana('camara'); pintarRollo(); }
+
+function alternarFiltro() {
+  S.soloFaltan = !S.soloFaltan;
+  guardaLocal('alumna_filtro', S.soloFaltan ? '1' : '0');
+  pintarRollo();
+}
+
+function listaRollo() {
+  var fi = idxFoto();
+  var lista = filtrados(document.getElementById('buscarFoto').value);
+  if (S.soloFaltan && fi >= 0) {
+    lista = lista.filter(function (a) { return !a.v[fi] || a._id === S.sel; });
+  }
+  return lista;
+}
+
+function pintarRollo() {
+  var fi = idxFoto();
+  var ul = document.getElementById('rollo');
+  var lista = listaRollo();
+  ul.innerHTML = '';
+
+  if (!lista.length) {
+    ul.innerHTML = '<p class="vacio">' +
+      (!S.alumnos.length ? 'Todavía no hay alumnos.'
+       : S.soloFaltan ? 'Ya todos tienen foto. Dale a Ver todos para repasarlos.'
+       : 'Nadie coincide con esa búsqueda.') + '</p>';
+  }
+
+  lista.forEach(function (a) {
+    var li = document.createElement('li');
+    var enCola = S.pendiente[a._id + 'foto'];
+    var clase = enCola ? 'cola' : (fi >= 0 && a.v[fi] ? 'lista' : '');
+    li.className = a._id === S.sel ? 'on' : '';
+    li.innerHTML = '<span class="luz ' + clase + '"></span><span class="nom">' +
+      esc(nombreDe(a)) + '</span>';
+    li.onclick = function () { S.sel = a._id; repetir(); pintarRollo(); };
+    ul.appendChild(li);
+  });
+
+  var conFoto = fi >= 0 ? S.alumnos.filter(function (x) { return x.v[fi]; }).length : 0;
+  var faltan = S.alumnos.length - conFoto;
+  document.getElementById('conteoRollo').textContent =
+    S.alumnos.length + ' alumnos · ' + conFoto + ' con foto · ' + faltan + ' sin foto';
+  document.getElementById('btnFiltro').textContent = S.soloFaltan ? 'Ver todos' : 'Solo faltan';
+
+  var a = S.sel ? buscarAlumno(S.sel) : null;
+  document.getElementById('quien').textContent = a ? nombreDe(a) : '—';
+  var activo = ul.querySelector('li.on');
+  if (activo) activo.scrollIntoView({ block: 'nearest' });
+}
+
+function indicesNombre() {
+  var idx = { nom: -1, pat: -1, mat: -1 };
+  S.nivel.columnas.forEach(function (c, i) {
+    var u = String(c).toUpperCase();
+    if (idx.pat < 0 && /PATERNO/.test(u)) { idx.pat = i; return; }
+    if (idx.mat < 0 && /MATERNO/.test(u)) { idx.mat = i; return; }
+    if (idx.pat < 0 && /APELLIDO/.test(u)) { idx.pat = i; return; }
+    if (idx.nom < 0 && /NOMBRE|ALUMNO/.test(u)) { idx.nom = i; }
+  });
+  if (idx.nom < 0) idx.nom = S.nivel.columnas.indexOf(S.nivel.colNombre);
+  if (idx.nom < 0) idx.nom = 0;
+  return idx;
+}
+
+function nombreDe(a) {
+  var idx = indicesNombre();
+  var partes = [a.v[idx.nom], idx.pat >= 0 ? a.v[idx.pat] : '', idx.mat >= 0 ? a.v[idx.mat] : ''];
+  var completo = partes.filter(function (x) { return String(x || '').trim(); }).join(' ').trim();
+  return completo || '(sin nombre)';
+}
+
+/* ------------------------------------------------------------- cámara */
+
+function proporcion() {
+  var p = String(S.nivel.proporcion || '3:4').split(':');
+  return Number(p[0]) / Number(p[1]);
+}
+
+function cambiarProporcion(v) {
+  S.nivel.proporcion = v;
+  var enAjustes = document.getElementById('selProp');
+  if (enAjustes) enAjustes.value = v;
+
+  if (ED.fuente) { medirLienzo(); pintarEditor(); }
+  if (S.stream) dibujarGuia();
+
+  api('ajustesNivel', { nivelId: S.nivel.id, proporcion: v })
+    .then(function () { decir('Recorte en ' + v); })
+    .catch(fallo);
+}
+
+function prender() {
+  var sel = document.getElementById('camaras');
+  var restric = {
+    video: {
+      width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30 },
+      deviceId: sel.value ? { exact: sel.value } : undefined
+    },
+    audio: false
+  };
+  apagar();
+  navigator.mediaDevices.getUserMedia(restric).then(function (st) {
+    S.stream = st;
+    var v = document.getElementById('video');
+    v.srcObject = st;
+    v.classList.remove('oculto');
+    document.getElementById('apagado').classList.add('oculto');
+    document.getElementById('lienzoEdit').classList.add('oculto');
+    document.getElementById('editor').classList.add('oculto');
+    document.getElementById('btnCamara').textContent = 'Apagar cámara';
+    document.getElementById('btnCamara').onclick = apagar;
+    v.play();
+    v.onloadedmetadata = function () { dibujarGuia(); mostrarResolucion(); };
+    listarCamaras();
+  }).catch(function (err) {
+    fallo(new Error('No pude abrir la cámara. ' + (err.message || '')));
+  });
+}
+
+function mostrarResolucion() {
+  var v = document.getElementById('video');
+  var e = document.getElementById('resReal');
+  if (!S.stream || !v.videoWidth) { e.textContent = ''; return; }
+  var t = S.stream.getVideoTracks()[0];
+  var fps = t && t.getSettings ? Math.round(t.getSettings().frameRate || 0) : 0;
+  e.textContent = v.videoWidth + '×' + v.videoHeight + (fps ? ' · ' + fps + ' fps' : '');
+}
+
+function apagar() {
+  if (S.stream) { S.stream.getTracks().forEach(function (t) { t.stop(); }); S.stream = null; }
+  var v = document.getElementById('video');
+  v.srcObject = null;
+  v.classList.add('oculto');
+  document.getElementById('guia').classList.add('oculto');
+  document.getElementById('resReal').textContent = '';
+  if (!S.toma) document.getElementById('apagado').classList.remove('oculto');
+  var b = document.getElementById('btnCamara');
+  b.textContent = 'Prender cámara';
+  b.onclick = prender;
+}
+
+(function () {
+  var sel = document.getElementById('calidadFoto');
+  sel.value = leeLocal('alumna_calidad') || '1600';
+  sel.onchange = function () { guardaLocal('alumna_calidad', sel.value); };
+})();
+
+function listarCamaras() {
+  if (!navigator.mediaDevices.enumerateDevices) return;
+  navigator.mediaDevices.enumerateDevices().then(function (ds) {
+    var sel = document.getElementById('camaras');
+    var previo = sel.value;
+    sel.innerHTML = '';
+    ds.filter(function (d) { return d.kind === 'videoinput'; }).forEach(function (d, i) {
+      var o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || ('Cámara ' + (i + 1));
+      sel.appendChild(o);
+    });
+    if (previo) sel.value = previo;
+  });
+}
+listarCamaras();
+
+function dibujarGuia() {
+  var v = document.getElementById('video');
+  var g = document.getElementById('guia');
+  if (!S.stream || !v.videoWidth) { g.classList.add('oculto'); return; }
+
+  var r = v.getBoundingClientRect();
+  var caja = document.getElementById('escena').getBoundingClientRect();
+  var prop = proporcion();
+  var alto = r.height * 0.92;
+  var ancho = alto * prop;
+  if (ancho > r.width * 0.92) { ancho = r.width * 0.92; alto = ancho / prop; }
+
+  g.style.width = ancho + 'px';
+  g.style.height = alto + 'px';
+  g.style.left = (r.left - caja.left + (r.width - ancho) / 2) + 'px';
+  g.style.top = (r.top - caja.top + (r.height - alto) / 2) + 'px';
+  g.classList.remove('oculto');
+}
+window.addEventListener('resize', function () {
+  if (S.stream && !ED.fuente) dibujarGuia();
+  if (ED.fuente) { medirLienzo(); pintarEditor(); }
+});
+
+/* ---------------------------------------------------- editor de foto */
+
+var ED = { fuente: null, zoom: 1, giro: 0, brillo: 100, contraste: 100, ox: 0, oy: 0 };
+
+function disparar() {
+  if (S.toma) return repetir();
+  var v = document.getElementById('video');
+  if (!S.stream || !v.videoWidth) { decir('Prende la cámara primero', true); return; }
+  if (!S.sel) { decir('Elige un alumno de la lista', true); return; }
+
+  var cv = document.createElement('canvas');
+  cv.width = v.videoWidth;
+  cv.height = v.videoHeight;
+  cv.getContext('2d').drawImage(v, 0, 0);
+
+  var f = document.getElementById('flash');
+  f.className = 'flash on';
+  setTimeout(function () { f.className = 'flash'; }, 340);
+
+  abrirEditor(cv);
+}
+
+function abrirEditor(fuente) {
+  ED.fuente = fuente;
+  ED.zoom = 1; ED.giro = 0; ED.brillo = 100; ED.contraste = 100; ED.ox = 0; ED.oy = 0;
+  ['edZoom', 'edGiro', 'edBrillo', 'edContraste'].forEach(function (id, i) {
+    document.getElementById(id).value = [100, 0, 100, 100][i];
+  });
+
+  S.toma = true;
+  document.getElementById('video').classList.add('oculto');
+  document.getElementById('guia').classList.add('oculto');
+  document.getElementById('apagado').classList.add('oculto');
+  document.getElementById('lienzoEdit').classList.remove('oculto');
+  document.getElementById('editor').classList.remove('oculto');
+  document.getElementById('btnGuardar').disabled = false;
+  document.getElementById('btnRepetir').disabled = false;
+
+  medirLienzo();
+  pintarEditor();
+}
+
+function medirLienzo() {
+  var cv = document.getElementById('lienzoEdit');
+  var prop = proporcion();
+  var caja = document.getElementById('escena').getBoundingClientRect();
+  var alto = Math.min(caja.height - 26, Math.min(window.innerHeight * 0.58, 600));
+  if (!(alto > 60)) alto = 420;
+  var ancho = alto * prop;
+  if (ancho > caja.width - 26) { ancho = caja.width - 26; alto = ancho / prop; }
+  cv.width = Math.round(ancho);
+  cv.height = Math.round(alto);
+}
+
+// cuanto hay que escalar para que la foto tape todo el marco, ya girada
+function cubrir(anchoMarco, altoMarco) {
+  var r = ED.giro * Math.PI / 180;
+  var c = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
+  var w = c * ED.fuente.width + sn * ED.fuente.height;
+  var h = sn * ED.fuente.width + c * ED.fuente.height;
+  return { base: Math.max(anchoMarco / w, altoMarco / h), w: w, h: h };
+}
+
+function limitarArrastre(anchoMarco, altoMarco) {
+  var cb = cubrir(anchoMarco, altoMarco);
+  var e = cb.base * ED.zoom;
+  var maxX = Math.max(0, (cb.w * e - anchoMarco) / 2);
+  var maxY = Math.max(0, (cb.h * e - altoMarco) / 2);
+  ED.ox = Math.max(-maxX, Math.min(maxX, ED.ox));
+  ED.oy = Math.max(-maxY, Math.min(maxY, ED.oy));
+}
+
+function componer(cv, anchoMarco, altoMarco, factor) {
+  var cx = cv.getContext('2d');
+  // el encuadre se calcula SIEMPRE sobre el tamaño de la vista previa,
+  // y hasta el final se multiplica por el factor de salida. Si no, se eleva al cuadrado.
+  var cb = cubrir(anchoMarco / factor, altoMarco / factor);
+  var e = cb.base * ED.zoom * factor;
+
+  cx.fillStyle = '#000';
+  cx.fillRect(0, 0, cv.width, cv.height);
+  cx.save();
+  cx.translate(cv.width / 2 + ED.ox * factor, cv.height / 2 + ED.oy * factor);
+  cx.rotate(ED.giro * Math.PI / 180);
+  cx.scale(e, e);
+  cx.imageSmoothingQuality = 'high';
+  cx.drawImage(ED.fuente, -ED.fuente.width / 2, -ED.fuente.height / 2);
+  cx.restore();
+}
+
+function pintarEditor() {
+  if (!ED.fuente) return;
+  var cv = document.getElementById('lienzoEdit');
+  limitarArrastre(cv.width, cv.height);
+  componer(cv, cv.width, cv.height, 1);
+  cv.style.filter = 'brightness(' + ED.brillo + '%) contrast(' + ED.contraste + '%)';
+
+  document.getElementById('vZoom').textContent = Math.round(ED.zoom * 100) + '%';
+  document.getElementById('vGiro').textContent = (Math.round(ED.giro * 10) / 10) + '°';
+  document.getElementById('vBrillo').textContent = ED.brillo + '%';
+  document.getElementById('vContraste').textContent = ED.contraste + '%';
+}
+
+(function () {
+  var mapa = { edZoom: 'zoom', edGiro: 'giro', edBrillo: 'brillo', edContraste: 'contraste' };
+  Object.keys(mapa).forEach(function (id) {
+    document.getElementById(id).addEventListener('input', function () {
+      var v = Number(this.value);
+      ED[mapa[id]] = (mapa[id] === 'zoom') ? v / 100 : v;
+      pintarEditor();
+    });
+  });
+
+  var cv = document.getElementById('lienzoEdit');
+  var arrastrando = false, x0 = 0, y0 = 0;
+  cv.addEventListener('pointerdown', function (e) {
+    if (!ED.fuente) return;
+    arrastrando = true; x0 = e.clientX; y0 = e.clientY;
+    cv.setPointerCapture(e.pointerId);
+    cv.classList.add('agarrando');
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!arrastrando) return;
+    var caja = cv.getBoundingClientRect();
+    var k = caja.width ? cv.width / caja.width : 1;
+    ED.ox += (e.clientX - x0) * k;
+    ED.oy += (e.clientY - y0) * k;
+    x0 = e.clientX; y0 = e.clientY;
+    pintarEditor();
+  });
+  cv.addEventListener('pointerup', function () { arrastrando = false; cv.classList.remove('agarrando'); });
+  cv.addEventListener('pointercancel', function () { arrastrando = false; cv.classList.remove('agarrando'); });
+  cv.addEventListener('wheel', function (e) {
+    if (!ED.fuente) return;
+    e.preventDefault();
+    var z = ED.zoom * (e.deltaY < 0 ? 1.06 : 0.94);
+    ED.zoom = Math.max(1, Math.min(3.2, z));
+    document.getElementById('edZoom').value = Math.round(ED.zoom * 100);
+    pintarEditor();
+  }, { passive: false });
+})();
+
+function girarCuarto(g) {
+  ED.giro += g;
+  while (ED.giro > 180) ED.giro -= 360;
+  while (ED.giro < -180) ED.giro += 360;
+  var fina = ED.giro % 90;
+  if (fina > 20) fina = 20;
+  if (fina < -20) fina = -20;
+  document.getElementById('edGiro').value = fina;
+  pintarEditor();
+}
+
+function reiniciarEditor() {
+  ED.zoom = 1; ED.giro = 0; ED.brillo = 100; ED.contraste = 100; ED.ox = 0; ED.oy = 0;
+  ['edZoom', 'edGiro', 'edBrillo', 'edContraste'].forEach(function (id, i) {
+    document.getElementById(id).value = [100, 0, 100, 100][i];
+  });
+  pintarEditor();
+}
+
+function repetir() {
+  S.toma = null;
+  ED.fuente = null;
+  document.getElementById('lienzoEdit').classList.add('oculto');
+  document.getElementById('editor').classList.add('oculto');
+  document.getElementById('btnGuardar').disabled = true;
+  document.getElementById('btnRepetir').disabled = true;
+  if (S.stream) {
+    document.getElementById('video').classList.remove('oculto');
+    dibujarGuia();
+  } else {
+    document.getElementById('apagado').classList.remove('oculto');
+  }
+}
+
+// aplica brillo y contraste igual que los ve el navegador en la vista previa
+function aplicarLuz(cv) {
+  if (ED.brillo === 100 && ED.contraste === 100) return;
+  var cx = cv.getContext('2d');
+  var img = cx.getImageData(0, 0, cv.width, cv.height);
+  var d = img.data;
+  var b = ED.brillo / 100, c = ED.contraste / 100;
+  var tabla = new Uint8ClampedArray(256);
+  for (var i = 0; i < 256; i++) {
+    var v = i * b;
+    v = (v - 127.5) * c + 127.5;
+    tabla[i] = v < 0 ? 0 : v > 255 ? 255 : v;
+  }
+  for (var j = 0; j < d.length; j += 4) {
+    d[j] = tabla[d[j]]; d[j + 1] = tabla[d[j + 1]]; d[j + 2] = tabla[d[j + 2]];
+  }
+  cx.putImageData(img, 0, 0);
+}
+
+/* ══════════════════════════ recorte con IA ══════════════════════════ */
+/* Modelo U^2-Net (Apache 2.0) corriendo aqui mismo, en el navegador.
+   Ninguna foto sale de la maquina. El modelo entiende que es una persona,
+   asi que la camisa blanca sobre fondo blanco ya no se pierde. */
+
+var IA = { sesion: null, cargando: false, error: '', lado: 320, instalado: null };
+var MASCARAS = {};   // por nombre de archivo, siempre de 320x320
+
+/* ── el modelo se guarda aqui dentro del navegador, no en el repo ── */
+
+function bdIA() {
+  return new Promise(function (ok, mal) {
+    var p = indexedDB.open('alumna', 1);
+    p.onupgradeneeded = function () { p.result.createObjectStore('modelos'); };
+    p.onsuccess = function () { ok(p.result); };
+    p.onerror = function () { mal(new Error('No pude abrir el almacén del navegador.')); };
+  });
+}
+
+function guardarModeloLocal(nombre, buf) {
+  return bdIA().then(function (db) {
+    return new Promise(function (ok, mal) {
+      var t = db.transaction('modelos', 'readwrite');
+      t.objectStore('modelos').put({ nombre: nombre, buf: buf, fecha: Date.now() }, 'modelo');
+      t.oncomplete = function () { IA.instalado = { nombre: nombre, tam: buf.byteLength }; ok(); };
+      t.onerror = function () { mal(new Error('No cupo en el navegador.')); };
+    });
+  });
+}
+
+function leerModeloLocal() {
+  return bdIA().then(function (db) {
+    return new Promise(function (ok) {
+      var r = db.transaction('modelos', 'readonly').objectStore('modelos').get('modelo');
+      r.onsuccess = function () { ok(r.result || null); };
+      r.onerror = function () { ok(null); };
+    });
+  }).catch(function () { return null; });
+}
+
+function borrarModeloLocal() {
+  return bdIA().then(function (db) {
+    return new Promise(function (ok) {
+      var t = db.transaction('modelos', 'readwrite');
+      t.objectStore('modelos').delete('modelo');
+      t.oncomplete = function () { IA.instalado = null; IA.sesion = null; ok(); };
+    });
+  });
+}
+
+// Al arrancar, nada mas averiguamos si ya hay modelo puesto.
+leerModeloLocal().then(function (m) {
+  IA.instalado = m ? { nombre: m.nombre, tam: m.buf.byteLength } : null;
+});
+
+function hayIA() {
+  return !!IA.instalado || (typeof MODELO_IA !== 'undefined' && !!MODELO_IA);
+}
+
+function cargarLibIA() {
+  return new Promise(function (ok, mal) {
+    if (window.ort) { ok(); return; }
+    var sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js';
+    sc.onload = function () { ok(); };
+    sc.onerror = function () { mal(new Error('No pude bajar la librería de IA. ¿Hay internet?')); };
+    document.head.appendChild(sc);
+  });
+}
+
+function abrirModelo() {
+  if (IA.sesion) return Promise.resolve(IA.sesion);
+  if (IA.cargando) return IA.cargando;
+
+  IA.cargando = cargarLibIA().then(function () {
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/';
+    return leerModeloLocal();
+  }).then(function (guardado) {
+    if (guardado) {
+      return ort.InferenceSession.create(new Uint8Array(guardado.buf), { executionProviders: ['wasm'] });
+    }
+    if (typeof MODELO_IA === 'undefined' || !MODELO_IA) {
+      throw new Error('Todavía no has puesto el modelo. Dale a "Modelo de IA…".');
+    }
+    return ort.InferenceSession.create(MODELO_IA, { executionProviders: ['wasm'] });
+  }).then(function (ses) {
+    IA.sesion = ses;
+    IA.cargando = false;
+    return ses;
+  }).catch(function (e) {
+    IA.cargando = false;
+    IA.error = String(e.message || e);
+    throw e;
+  });
+  return IA.cargando;
+}
+
+function abrirModal() {
+  pintarEstadoModelo();
+  document.getElementById('modeloUrl').value =
+    (typeof MODELO_IA !== 'undefined' && MODELO_IA) ? MODELO_IA : '';
+  abrir('velModelo');
+}
+
+function pintarEstadoModelo(texto) {
+  var e = document.getElementById('modeloEstado');
+  if (texto) { e.textContent = texto; return; }
+  e.textContent = IA.instalado
+    ? 'Puesto: ' + IA.instalado.nombre + ' · ' + Math.round(IA.instalado.tam / 1048576) + ' MB'
+    : 'Todavía no hay modelo en este navegador.';
+}
+
+function ponerModelo(nombre, buf) {
+  IA.sesion = null;
+  MASCARAS = {};
+  return guardarModeloLocal(nombre, buf).then(function () {
+    pintarEstadoModelo();
+    decir('Modelo listo. Ya puedes usar el recorte con IA.');
+  }).catch(function (e) { pintarEstadoModelo('No se pudo guardar: ' + e.message); });
+}
+
+document.getElementById('archivoModelo').addEventListener('change', function (ev) {
+  var f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  pintarEstadoModelo('Guardando ' + f.name + '…');
+  f.arrayBuffer().then(function (buf) { ponerModelo(f.name, buf); });
+});
+
+function bajarModelo() {
+  var url = document.getElementById('modeloUrl').value.trim();
+  if (!url) { pintarEstadoModelo('Escribe primero de dónde bajarlo.'); return; }
+  pintarEstadoModelo('Bajando…');
+
+  fetch(url).then(function (r) {
+    if (!r.ok) throw new Error('Respondió ' + r.status);
+    var total = Number(r.headers.get('content-length') || 0);
+    if (!r.body || !total) return r.arrayBuffer();
+
+    var lector = r.body.getReader(), trozos = [], leido = 0;
+    return (function seguir() {
+      return lector.read().then(function (t) {
+        if (t.done) {
+          var todo = new Uint8Array(leido), pos = 0;
+          trozos.forEach(function (c) { todo.set(c, pos); pos += c.length; });
+          return todo.buffer;
+        }
+        trozos.push(t.value); leido += t.value.length;
+        pintarEstadoModelo('Bajando… ' + Math.round(leido * 100 / total) + '%');
+        return seguir();
+      });
+    })();
+  }).then(function (buf) {
+    ponerModelo(url.split('/').pop().split('?')[0] || 'modelo.onnx', buf);
+  }).catch(function (e) {
+    pintarEstadoModelo('No se pudo bajar: ' + (e.message || e) +
+      '. Si el sitio no lo permite, bájalo tú y usa "Elegir archivo".');
+  });
+}
+
+function quitarModelo() {
+  if (!confirm('¿Quitar el modelo de este navegador?')) return;
+  borrarModeloLocal().then(function () {
+    MASCARAS = {};
+    pintarEstadoModelo();
+    decir('Modelo quitado');
+  });
+}
+
+/* Saca la máscara de una imagen. Siempre 320x320, así que sirve igual
+   si se la sacamos a la miniatura o a la foto grande. */
+function sacarMascara(fuente) {
+  return abrirModelo().then(function (ses) {
+    var L = IA.lado;
+    var cv = document.createElement('canvas');
+    cv.width = L; cv.height = L;
+    var cx = cv.getContext('2d');
+    cx.drawImage(fuente, 0, 0, L, L);
+    var px = cx.getImageData(0, 0, L, L).data;
+
+    var media = [0.485, 0.456, 0.406], desv = [0.229, 0.224, 0.225];
+    if (typeof MODELO_TIPO !== 'undefined' && MODELO_TIPO === 'isnet') {
+      media = [0.5, 0.5, 0.5]; desv = [1, 1, 1];
+    }
+
+    var datos = new Float32Array(3 * L * L);
+    for (var i = 0, j = 0; i < px.length; i += 4, j++) {
+      datos[j] = (px[i] / 255 - media[0]) / desv[0];
+      datos[L * L + j] = (px[i + 1] / 255 - media[1]) / desv[1];
+      datos[2 * L * L + j] = (px[i + 2] / 255 - media[2]) / desv[2];
+    }
+
+    var entrada = {};
+    entrada[ses.inputNames[0]] = new ort.Tensor('float32', datos, [1, 3, L, L]);
+    return ses.run(entrada).then(function (r) {
+      var salida = r[ses.outputNames[0]].data;
+      var min = Infinity, max = -Infinity;
+      for (var k = 0; k < salida.length; k++) {
+        if (salida[k] < min) min = salida[k];
+        if (salida[k] > max) max = salida[k];
+      }
+      var rango = (max - min) || 1;
+      var m = new Float32Array(L * L);
+      for (var k2 = 0; k2 < L * L; k2++) m[k2] = (salida[k2] - min) / rango;
+      return m;
+    });
+  });
+}
+
+/* Estira la máscara al tamaño de la foto, con el suavizado del navegador. */
+function mascaraEstirada(m, an, al) {
+  var L = IA.lado;
+  var chico = document.createElement('canvas');
+  chico.width = L; chico.height = L;
+  var cx = chico.getContext('2d');
+  var img = cx.createImageData(L, L);
+  for (var i = 0; i < m.length; i++) {
+    var v = Math.round(m[i] * 255);
+    img.data[i * 4] = v; img.data[i * 4 + 1] = v; img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+  }
+  cx.putImageData(img, 0, 0);
+
+  var grande = document.createElement('canvas');
+  grande.width = an; grande.height = al;
+  var gx = grande.getContext('2d');
+  gx.imageSmoothingEnabled = true;
+  gx.imageSmoothingQuality = 'high';
+  gx.drawImage(chico, 0, 0, an, al);
+  return gx.getImageData(0, 0, an, al).data;
+}
+
+/* Aplica la máscara como transparencia, con el umbral de los deslizadores. */
+function recortarConIA(cv, m, opt) {
+  var cx = cv.getContext('2d');
+  var img = cx.getImageData(0, 0, cv.width, cv.height);
+  var d = img.data;
+  var esc = mascaraEstirada(m, cv.width, cv.height);
+
+  var bajo = Math.min(0.95, opt.tolerancia / 120);
+  var alto = Math.min(1, bajo + Math.max(0.02, opt.suavizado / 120));
+  for (var i = 0, j = 0; i < d.length; i += 4, j += 4) {
+    var v = esc[j] / 255;
+    d[i + 3] = v <= bajo ? 0
+             : v >= alto ? 255
+             : Math.round(255 * (v - bajo) / (alto - bajo));
+  }
+  cx.putImageData(img, 0, 0);
+  return cv;
+}
+
+/* ══════════════════════ motor: fondo y marca de agua ══════════════════════ */
+
+/* Deja transparente lo que se parezca al color de las orillas.
+   Sirve con fondos parejos: blanco, gris o de color liso. */
+function recortarFondo(cv, opt) {
+  var cx = cv.getContext('2d');
+  var img = cx.getImageData(0, 0, cv.width, cv.height);
+  var d = img.data, an = cv.width, al = cv.height;
+
+  var sr = 0, sg = 0, sb = 0, cuenta = 0;
+  var borde = Math.max(2, Math.round(Math.min(an, al) * 0.02));
+  function tomar(x, y) {
+    var i = (y * an + x) * 4;
+    sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; cuenta++;
+  }
+  for (var x = 0; x < an; x += 2) {
+    for (var b = 0; b < borde; b++) { tomar(x, b); tomar(x, al - 1 - b); }
+  }
+  for (var y = 0; y < al; y += 2) {
+    for (var b2 = 0; b2 < borde; b2++) { tomar(b2, y); tomar(an - 1 - b2, y); }
+  }
+  var fr = sr / cuenta, fg = sg / cuenta, fb = sb / cuenta;
+
+  var dentro = opt.tolerancia;
+  var fuera = dentro + Math.max(1, opt.suavizado);
+  for (var i = 0; i < d.length; i += 4) {
+    var dr = d[i] - fr, dg = d[i + 1] - fg, db = d[i + 2] - fb;
+    var dist = Math.sqrt(dr * dr + dg * dg + db * db);
+    if (dist <= dentro) d[i + 3] = 0;
+    else if (dist < fuera) d[i + 3] = Math.round(255 * (dist - dentro) / (fuera - dentro));
+  }
+  cx.putImageData(img, 0, 0);
+  return cv;
+}
+
+/* Pinta el fondo nuevo debajo del recorte. */
+function ponerFondo(recorte, opt, imgFondo) {
+  var an = recorte.width, al = recorte.height;
+  var fin = document.createElement('canvas');
+  fin.width = an; fin.height = al;
+  var fx = fin.getContext('2d');
+
+  if (opt.fondo === 'color') {
+    fx.fillStyle = opt.color || '#ffffff';
+    fx.fillRect(0, 0, an, al);
+  } else if (opt.fondo === 'imagen' && imgFondo) {
+    if (opt.modoImg === 'estirar') {
+      var e = Math.max(an / imgFondo.width, al / imgFondo.height);
+      var aw = imgFondo.width * e, ah = imgFondo.height * e;
+      fx.drawImage(imgFondo, (an - aw) / 2, (al - ah) / 2, aw, ah);
+    } else {
+      var lado = Math.max(16, Math.round(an * (opt.escalaImg || 30) / 100));
+      var alto = Math.round(lado * (imgFondo.height / imgFondo.width));
+      for (var y = 0; y < al; y += alto) {
+        for (var x = 0; x < an; x += lado) fx.drawImage(imgFondo, x, y, lado, alto);
+      }
+    }
+  }
+  fx.drawImage(recorte, 0, 0);
+  return fin;
+}
+
+/* La marca de agua, repetida en diagonal. */
+function pintarMarca(cv, m, imgMarca) {
+  if (!m || m.tipo === 'ninguna') return cv;
+  var cx = cv.getContext('2d');
+  var paso = Math.max(40, Math.round(cv.width * (m.tam || 33) / 100));
+  var largo = Math.max(cv.width, cv.height) * 1.7;
+
+  cx.save();
+  cx.globalAlpha = (m.opacidad || 28) / 100;
+  cx.translate(cv.width / 2, cv.height / 2);
+  cx.rotate((m.angulo || 0) * Math.PI / 180);
+
+  var texto = m.tipo === 'texto'
+    ? (m.texto || 'MUESTRA')
+    : ((S.nivel && S.nivel.escuela) || 'MUESTRA');
+
+  for (var y = -largo; y < largo; y += paso) {
+    for (var x = -largo; x < largo; x += paso) {
+      if (imgMarca) {
+        var an = paso * 0.66;
+        cx.drawImage(imgMarca, x, y, an, an * (imgMarca.height / imgMarca.width));
+      } else {
+        cx.fillStyle = '#fff';
+        cx.strokeStyle = 'rgba(0,0,0,.35)';
+        cx.lineWidth = Math.max(1, paso / 70);
+        cx.font = '600 ' + Math.round(paso / 6) + 'px system-ui, sans-serif';
+        cx.strokeText(texto, x, y);
+        cx.fillText(texto, x, y);
+      }
+    }
+  }
+  cx.restore();
+  return cv;
+}
+
+/* Todo junto. Devuelve un lienzo nuevo. */
+function procesar(fuente, ac, m, mascara) {
+  var cv = document.createElement('canvas');
+  cv.width = fuente.width; cv.height = fuente.height;
+  cv.getContext('2d').drawImage(fuente, 0, 0);
+
+  if (ac && ac.fondo && ac.fondo !== 'normal') {
+    if (ac.motor === 'ia' && mascara) recortarConIA(cv, mascara, ac);
+    else recortarFondo(cv, ac);
+    if (ac.fondo !== 'quitar') cv = ponerFondo(cv, ac, ASSETS.fondo || null);
+  }
+  if (m && m.tipo !== 'ninguna') {
+    pintarMarca(cv, m, m.tipo === 'texto' ? null
+      : (m.tipo === 'imagen' ? ASSETS.marca : ASSETS.logo));
+  }
+  return cv;
+}
+
+/* Las tres imágenes que se pueden usar: logo, marca propia, fondo. */
+var ASSETS = { logo: null, marca: null, fondo: null };
+
+function cargarAssets(listo) {
+  var pares = [['logo', S.nivel && S.nivel.logo],
+               ['marca', S.nivel && S.nivel.marcaImg],
+               ['fondo', S.nivel && S.nivel.fondoImg]];
+  var faltan = 0, hecho = false;
+  function fin() { if (!faltan && !hecho) { hecho = true; listo && listo(); } }
+
+  pares.forEach(function (par) {
+    if (!par[1]) { ASSETS[par[0]] = null; return; }
+    if (ASSETS[par[0]] && ASSETS[par[0]].src.indexOf(par[1].split('?')[0]) >= 0) return;
+    faltan++;
+    var im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = function () { ASSETS[par[0]] = im; faltan--; fin(); };
+    im.onerror = function () { ASSETS[par[0]] = null; faltan--; fin(); };
+    im.src = par[1];
+  });
+  fin();
+}
+
+function acabadoActual() {
+  var a = (S.nivel && S.nivel.acabado) || {};
+  return {
+    fondo: a.fondo || 'normal',
+    color: a.color || '#ffffff',
+    tolerancia: Number(a.tolerancia === undefined ? 30 : a.tolerancia),
+    suavizado: Number(a.suavizado === undefined ? 12 : a.suavizado),
+    modoImg: a.modoImg || 'mosaico',
+    escalaImg: Number(a.escalaImg === undefined ? 30 : a.escalaImg),
+    motor: a.motor === 'ia' ? 'ia' : 'color'
+  };
+}
+
+function marcaActual() {
+  var m = (S.nivel && S.nivel.marca) || {};
+  return {
+    tipo: m.tipo || 'ninguna',
+    texto: m.texto || '',
+    opacidad: Number(m.opacidad === undefined ? 28 : m.opacidad),
+    tam: Number(m.tam === undefined ? 33 : m.tam),
+    angulo: Number(m.angulo === undefined ? -28 : m.angulo)
+  };
+}
+
+function exportarEditor() {
+  var vista = document.getElementById('lienzoEdit');
+  var prop = proporcion();
+  var tope = Number(document.getElementById('calidadFoto').value) || 0;
+
+  var altoNativo = Math.round(Math.min(ED.fuente.width / prop, ED.fuente.height));
+  var alto = tope ? Math.min(tope, altoNativo) : altoNativo;
+  var ancho = Math.round(alto * prop);
+
+  var cv = document.createElement('canvas');
+  cv.width = ancho; cv.height = alto;
+  componer(cv, ancho, alto, ancho / vista.width);
+  aplicarLuz(cv);
+
+  var ac = acabadoActual();
+  if (ac.fondo === 'normal') return { url: cv.toDataURL('image/jpeg', 0.94), ext: 'jpg' };
+
+  // al capturar se usa el modo por color: la IA se aplica despues, en Fotos tomadas
+  var salida = procesar(cv, { fondo: ac.fondo, color: ac.color, tolerancia: ac.tolerancia,
+                              suavizado: ac.suavizado, modoImg: ac.modoImg,
+                              escalaImg: ac.escalaImg, motor: 'color' }, null);
+  return ac.fondo === 'quitar'
+    ? { url: salida.toDataURL('image/png'), ext: 'png' }
+    : { url: salida.toDataURL('image/jpeg', 0.94), ext: 'jpg' };
+}
+
+// Abre en otra pestaña el archivo tal cual va a quedar. Sin Drive, sin miniaturas, sin caché.
+function verSalida() {
+  if (!ED.fuente) return;
+  var salida = exportarEditor();
+  var url = salida.url;
+  var w = window.open('');
+  if (!w) { decir('El navegador bloqueó la ventana. Permite las ventanas emergentes.', true); return; }
+  var vista = document.getElementById('lienzoEdit');
+  w.document.write(
+    '<title>Salida — ALUM-NA v21</title>' +
+    '<body style="margin:0;background:#241d16;color:#f6efe5;font-family:system-ui;text-align:center">' +
+    '<p style="padding:14px;font-size:14px">Vista previa ' + vista.width + '×' + vista.height +
+    ' · acercamiento ' + Math.round(ED.zoom * 100) + '%' +
+    ' · se guarda como .' + salida.ext + '</p>' +
+    '<img src="' + url + '" style="max-width:96%;max-height:78vh;border:1px solid #463a2c;' +
+      'background:repeating-conic-gradient(#3a3128 0 25%,#2b241c 0 50%) 0 0/22px 22px">' +
+    '<p style="padding:14px;font-size:13px;opacity:.6">Así se va a guardar en Drive.</p></body>');
+  w.document.close();
+}
+
+function guardarFoto() {
+  if (!ED.fuente || !S.sel) return;
+  var salida = exportarEditor();
+  encolar({ nivelId: S.nivel.id, alumnoId: S.sel, tipo: 'foto', b64: salida.url, ext: salida.ext });
+  var quien = S.sel;
+  siguientePendiente(quien);
+  repetir();
+  decir('Guardada. Va la siguiente.');
+}
+
+function siguientePendiente(desde) {
+  var fi = idxFoto();
+  var todos = S.alumnos;
+  var i = todos.findIndex(function (a) { return a._id === desde; });
+  for (var k = 1; k <= todos.length; k++) {
+    var a = todos[(i + k) % todos.length];
+    if (fi < 0 || (!a.v[fi] && !S.pendiente[a._id + 'foto'])) { S.sel = a._id; break; }
+  }
+  pintarRollo();
+}
+
+function moverSeleccion(paso) {
+  var lista = listaRollo();
+  if (!lista.length) return;
+  var i = lista.findIndex(function (a) { return a._id === S.sel; });
+  var n = (i + paso + lista.length) % lista.length;
+  S.sel = lista[n]._id;
+  repetir();
+  pintarRollo();
+}
+
+document.addEventListener('keydown', function (e) {
+  if (document.getElementById('pCamara').classList.contains('oculto')) return;
+  if (document.querySelector('.velo.on')) return;
+  var t = e.target.tagName;
+  if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+
+  if (e.code === 'Space') { e.preventDefault(); S.toma ? repetir() : disparar(); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (S.toma) guardarFoto(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); moverSeleccion(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); moverSeleccion(-1); }
+});
+
+/* --------------------------------------------------------- subir foto */
+
+document.getElementById('archivoFoto').addEventListener('change', function (ev) {
+  var f = ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (!S.sel) { decir('Elige un alumno primero', true); return; }
+  var lector = new FileReader();
+  lector.onload = function (e) {
+    var im = new Image();
+    im.onload = function () {
+      var cv = document.createElement('canvas');
+      var lado = Math.min(3000, Math.max(im.width, im.height));
+      var f2 = lado / Math.max(im.width, im.height);
+      cv.width = Math.round(im.width * f2);
+      cv.height = Math.round(im.height * f2);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      abrirEditor(cv);
+    };
+    im.onerror = function () { fallo(new Error('No pude abrir esa imagen.')); };
+    im.src = e.target.result;
+  };
+  lector.readAsDataURL(f);
+});
+
+/* ═══════════════════════════════════════════════════════════════ firma */
+
+var lienzo, ctx, trazando = false, hayTrazo = false;
+
+function abrirFirma() {
+  if (!S.sel) { decir('Elige un alumno primero', true); return; }
+  if (!S.nivel.colFirma) { decir('Este nivel no tiene columna de firma. Agrégala en Ajustes.', true); return; }
+  document.getElementById('firmaDe').textContent = nombreDe(buscarAlumno(S.sel));
+  abrir('velFirma');
+  setTimeout(prepararLienzo, 60);
+}
+
+function prepararLienzo() {
+  lienzo = document.getElementById('lienzo');
+  var ancho = lienzo.clientWidth || 700;
+  lienzo.width = ancho * 2;
+  lienzo.height = 260 * 2;
+  ctx = lienzo.getContext('2d');
+  ctx.scale(2, 2);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#101010';
+  hayTrazo = false;
+
+  lienzo.onpointerdown = function (e) {
+    trazando = true; hayTrazo = true;
+    lienzo.setPointerCapture(e.pointerId);
+    ctx.beginPath();
+    ctx.moveTo(...punto(e));
+  };
+  lienzo.onpointermove = function (e) {
+    if (!trazando) return;
+    ctx.lineWidth = 1 + (e.pressure ? e.pressure * 3.4 : 1.6);
+    ctx.lineTo(...punto(e));
+    ctx.stroke();
+  };
+  lienzo.onpointerup = lienzo.onpointercancel = function () { trazando = false; };
+}
+
+function punto(e) {
+  var r = lienzo.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+
+function limpiarFirma() {
+  ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+  hayTrazo = false;
+}
+
+function guardarFirma() {
+  if (!hayTrazo) { decir('Firma primero', true); return; }
+  var recortada = recortarTransparente(lienzo);
+  encolar({ nivelId: S.nivel.id, alumnoId: S.sel, tipo: 'firma', b64: recortada });
+  cerrar('velFirma');
+  decir('Firma guardada');
+}
+
+function recortarTransparente(cv) {
+  var cx = cv.getContext('2d');
+  var d = cx.getImageData(0, 0, cv.width, cv.height).data;
+  var x0 = cv.width, y0 = cv.height, x1 = 0, y1 = 0, hay = false;
+  for (var y = 0; y < cv.height; y++) {
+    for (var x = 0; x < cv.width; x++) {
+      if (d[(y * cv.width + x) * 4 + 3] > 12) {
+        hay = true;
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (!hay) return cv.toDataURL('image/png');
+  var m = 12;
+  x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m);
+  x1 = Math.min(cv.width, x1 + m); y1 = Math.min(cv.height, y1 + m);
+  var out = document.createElement('canvas');
+  out.width = x1 - x0; out.height = y1 - y0;
+  out.getContext('2d').drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  return out.toDataURL('image/png');
+}
+
+/* ══════════════════════════════════════════════════════ cola de subida */
+
+var COLA = [];
+var subiendo = false;
+
+function encolar(item) {
+  item.k = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  COLA.push(item);
+  S.pendiente[item.alumnoId + item.tipo] = true;
+  guardarCola();
+  pintarCola();
+  pintarTabla();
+  pintarRollo();
+  correrCola();
+}
+
+function guardarCola() {
+  try { localStorage.setItem('alumna_cola', JSON.stringify(COLA)); } catch (e) {}
+}
+
+function arrancarCola() {
+  try {
+    var g = JSON.parse(localStorage.getItem('alumna_cola') || '[]');
+    if (g.length) {
+      COLA = g;
+      g.forEach(function (i) { S.pendiente[i.alumnoId + i.tipo] = true; });
+      decir('Retomando ' + g.length + ' imagen' + (g.length === 1 ? '' : 'es') + ' sin subir');
+    }
+  } catch (e) {}
+  pintarCola();
+  correrCola();
+  setInterval(function () { if (COLA.length && !subiendo) correrCola(); }, 15000);
+}
+
+function correrCola() {
+  if (subiendo || !COLA.length) { pintarCola(); return; }
+  subiendo = true;
+  pintarCola();
+  var item = COLA[0];
+
+  api('subirImagen', {
+    nivelId: item.nivelId, alumnoId: item.alumnoId, tipo: item.tipo,
+    b64: item.b64, ext: item.ext || ''
+  }).then(function (d) {
+    COLA.shift();
+    guardarCola();
+    delete S.pendiente[item.alumnoId + item.tipo];
+    if (S.nivel && S.nivel.id === item.nivelId) {
+      var a = buscarAlumno(item.alumnoId);
+      var c = S.nivel.columnas.indexOf(d.columna);
+      if (a && c >= 0) a.v[c] = d.nombre;
+      delete GAL.minis[d.nombre]; delete GAL.pedidas[d.nombre];
+      pintarTabla();
+      pintarRollo();
+      if (!document.getElementById('pFotos').classList.contains('oculto')) pintarGaleria();
+    }
+    subiendo = false;
+    correrCola();
+  }).catch(function (err) {
+    subiendo = false;
+    pintarCola(err);
+    setTimeout(correrCola, 8000);
+  });
+}
+
+function pintarCola(err) {
+  var p = document.getElementById('pildoraCola');
+  var t = document.getElementById('textoCola');
+  if (!COLA.length) { p.className = 'pildora'; t.textContent = 'Al día'; return; }
+  p.className = 'pildora ' + (err ? 'mala' : 'trabajando');
+  t.textContent = err ? COLA.length + ' sin subir · reintentando' : 'Subiendo ' + COLA.length;
+}
+
+window.addEventListener('beforeunload', function (e) {
+  if (COLA.length) { e.preventDefault(); e.returnValue = ''; return ''; }
+});
+
+
+/* ═════════════════════════════════════════════════════════ fotos tomadas */
+
+var GAL = { pedidas: {}, minis: {}, marca: false, previa: false, abierta: null,
+            original: null, archivo: '', medida: '', mascara: null };
+
+function normaliza(t) {
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function idxFoto2() {
+  return S.nivel ? S.nivel.columnas.indexOf(S.nivel.colFoto) : -1;
+}
+
+function listaGaleria() {
+  var fi = idxFoto2();
+  var filtro = document.getElementById('filtroGaleria').value;
+  var q = normaliza(document.getElementById('buscarGaleria').value);
+  var palabras = q.split(/\s+/).filter(String);
+
+  return S.alumnos.filter(function (a) {
+    var tiene = fi >= 0 && !!a.v[fi];
+    if (filtro === 'con' && !tiene) return false;
+    if (filtro === 'sin' && tiene) return false;
+    if (palabras.length) {
+      var n = normaliza(nombreDe(a));
+      if (!palabras.every(function (p) { return n.indexOf(p) >= 0; })) return false;
+    }
+    return true;
+  });
+}
+
+function pintarGaleria() {
+  if (!S.nivel) return;
+  var cont = document.getElementById('galeria');
+  var fi = idxFoto2();
+  var lista = listaGaleria();
+
+  if (fi < 0) {
+    cont.innerHTML = '<p class="vacio">Este nivel no tiene columna de foto. ' +
+      'Elígela en Ajustes.</p>';
+    document.getElementById('conteoGaleria').textContent = '';
+    return;
+  }
+
+  var conFoto = S.alumnos.filter(function (a) { return !!a.v[fi]; }).length;
+  document.getElementById('conteoGaleria').textContent =
+    conFoto + ' de ' + S.alumnos.length + ' con foto';
+
+  if (!lista.length) { cont.innerHTML = '<p class="vacio">Nada que mostrar aquí.</p>'; return; }
+
+  cont.innerHTML = lista.map(function (a) {
+    var archivo = a.v[fi] || '';
+    var cuerpo;
+    if (!archivo) cuerpo = '<div class="aviso">Sin foto</div>';
+    else if (GAL.minis[archivo] === 'falta') cuerpo = '<div class="aviso">No está en Drive</div>';
+    else if (GAL.minis[archivo]) cuerpo = '<canvas data-archivo="' + esc(archivo) + '"></canvas>';
+    else cuerpo = '<div class="aviso">…</div>';
+
+    return '<div class="tarjeta-foto' + (archivo ? '' : ' falta') + '">' +
+      '<div class="marco"' + (archivo ? ' onclick="verGrande(\'' + esc(a._id) + '\')"' : '') + '>' +
+        cuerpo + '</div>' +
+      '<div class="nombre"><b>' + esc(nombreDe(a)) + '</b>' +
+        (archivo ? '<span class="mono" style="font-size:11px;color:var(--muted-osc)">' +
+          esc(archivo) + '</span>' : '') + '</div>' +
+      '<div class="acciones">' +
+        '<button onclick="irARepetir(\'' + esc(a._id) + '\')">Repetir</button>' +
+        (archivo ? '<button onclick="verGrande(\'' + esc(a._id) + '\')">Ver grande</button>' : '') +
+      '</div></div>';
+  }).join('');
+
+  // pinta las que ya tenemos y pide las que faltan
+  lista.forEach(function (a) {
+    var archivo = a.v[fi];
+    if (archivo && GAL.minis[archivo] && GAL.minis[archivo] !== 'falta') dibujarMini(archivo);
+  });
+  pedirMinis(lista.map(function (a) { return a.v[fi]; }).filter(String));
+}
+
+function dibujarMini(archivo) {
+  var cv = document.querySelector('.marco canvas[data-archivo="' + archivo.replace(/"/g, '\\"') + '"]');
+  if (!cv) return;
+  var im = new Image();
+  im.onload = function () {
+    var max = 420;
+    var f = Math.min(1, max / Math.max(im.width, im.height));
+    var base = document.createElement('canvas');
+    base.width = Math.round(im.width * f);
+    base.height = Math.round(im.height * f);
+    base.getContext('2d').drawImage(im, 0, 0, base.width, base.height);
+
+    var ac = GAL.previa ? acabadoActual() : { fondo: 'normal' };
+    var m = GAL.marca ? marcaActual() : null;
+    m = m && m.tipo !== 'ninguna' ? m : null;
+
+    function pinta(mascara) {
+      var salida = procesar(base, ac, m, mascara);
+      cv.width = salida.width; cv.height = salida.height;
+      cv.getContext('2d').drawImage(salida, 0, 0);
+    }
+
+    if (ac.fondo !== 'normal' && ac.motor === 'ia') {
+      if (MASCARAS[archivo]) pinta(MASCARAS[archivo]);
+      else {
+        pinta(null);
+        encolarMascara(archivo, base);
+      }
+    } else pinta(null);
+  };
+  im.src = GAL.minis[archivo];
+}
+
+var COLA_IA = [], iaTrabajando = false;
+
+function encolarMascara(archivo, fuente) {
+  if (COLA_IA.some(function (x) { return x.archivo === archivo; })) return;
+  COLA_IA.push({ archivo: archivo, fuente: fuente });
+  correrColaIA();
+}
+
+function correrColaIA() {
+  if (iaTrabajando || !COLA_IA.length) return;
+  iaTrabajando = true;
+  var t = COLA_IA.shift();
+  sacarMascara(t.fuente).then(function (m) {
+    MASCARAS[t.archivo] = m;
+    iaTrabajando = false;
+    dibujarMini(t.archivo);
+    correrColaIA();
+  }).catch(function () {
+    iaTrabajando = false;
+    COLA_IA = [];
+    decir('No pude usar el recorte con IA aquí', true);
+  });
+}
+
+function pedirMinis(archivos) {
+  var faltan = archivos.filter(function (x) { return !GAL.minis[x] && !GAL.pedidas[x]; });
+  if (!faltan.length) return;
+  var tanda = faltan.slice(0, 12);
+  tanda.forEach(function (x) { GAL.pedidas[x] = true; });
+
+  api('miniaturas', { nivelId: S.nivel.id, nombres: tanda }).then(function (d) {
+    d.fotos.forEach(function (f) {
+      if (f.b64) GAL.minis[f.nombre] = 'data:' + (f.tipo || 'image/jpeg') + ';base64,' + f.b64;
+      else GAL.minis[f.nombre] = 'falta';
+    });
+    pintarGaleria();
+  }).catch(function () {
+    tanda.forEach(function (x) { delete GAL.pedidas[x]; });
+  });
+}
+
+function recargarGaleria() {
+  GAL.minis = {}; GAL.pedidas = {};
+  api('nivel', { nivelId: S.nivel.id }).then(function (d) {
+    S.nivel = d.nivel;
+    S.alumnos = d.alumnos;
+    cargarAssets(pintarGaleria);
+    decir('Actualizado');
+  }).catch(fallo);
+}
+
+function cambiarMarca() {
+  GAL.marca = document.getElementById('marcaAgua').checked;
+  pintarGaleria();
+}
+
+function cambiarPrevia() {
+  GAL.previa = document.getElementById('previaFondo').checked;
+  pintarGaleria();
+}
+
+/* ───────────────────────── el taller de una foto ───────────────────────── */
+
+function verGrande(alumnoId) {
+  var a = buscarAlumno(alumnoId);
+  var fi = idxFoto2();
+  if (!a || fi < 0 || !a.v[fi]) return;
+  GAL.abierta = alumnoId;
+  GAL.original = null;
+  GAL.mascara = null;
+
+  document.getElementById('grandeNombre').textContent = nombreDe(a);
+  document.getElementById('grandeSub').textContent = 'Trayendo la foto de Drive…';
+  ponerMandos();
+  abrir('velGrande');
+
+  api('fotoGrande', { nivelId: S.nivel.id, nombre: a.v[fi] }).then(function (d) {
+    var im = new Image();
+    im.onload = function () {
+      var max = 1400;
+      var f = Math.min(1, max / Math.max(im.width, im.height));
+      var base = document.createElement('canvas');
+      base.width = Math.round(im.width * f);
+      base.height = Math.round(im.height * f);
+      base.getContext('2d').drawImage(im, 0, 0, base.width, base.height);
+      GAL.original = base;
+      GAL.archivo = d.nombre;
+      GAL.medida = im.width + '×' + im.height;
+      cargarAssets(function () {
+        var ac = acabadoActual();
+        if (ac.motor === 'ia' && ac.fondo !== 'normal') asegurarMascara(repintarTaller);
+        else repintarTaller();
+      });
+    };
+    im.src = 'data:' + d.tipo + ';base64,' + d.b64;
+  }).catch(fallo);
+}
+
+// Los controles arrancan con lo que tiene guardado el nivel.
+function ponerMandos() {
+  var ac = acabadoActual(), m = marcaActual();
+  document.getElementById('edFondo').value = ac.fondo;
+  document.getElementById('edMotor').value = ac.motor;
+  document.getElementById('edColor').value = ac.color;
+  document.getElementById('edTol').value = ac.tolerancia;
+  document.getElementById('edSuave').value = ac.suavizado;
+  document.getElementById('edModoImg').value = ac.modoImg;
+  document.getElementById('edEscalaImg').value = ac.escalaImg;
+  document.getElementById('edMarca').value = m.tipo;
+  document.getElementById('edTexto').value = m.texto;
+  document.getElementById('edOpa').value = m.opacidad;
+  document.getElementById('edTam').value = m.tam;
+  document.getElementById('edAng').value = m.angulo;
+  cambioEditor(true);
+}
+
+// Lee los controles, actualiza el nivel en memoria y repinta.
+function cambioEditor(soloMostrar) {
+  var fondo = document.getElementById('edFondo').value;
+  var marca = document.getElementById('edMarca').value;
+
+  S.nivel.acabado = {
+    fondo: fondo,
+    motor: document.getElementById('edMotor').value,
+    color: document.getElementById('edColor').value,
+    tolerancia: Number(document.getElementById('edTol').value),
+    suavizado: Number(document.getElementById('edSuave').value),
+    modoImg: document.getElementById('edModoImg').value,
+    escalaImg: Number(document.getElementById('edEscalaImg').value)
+  };
+  S.nivel.marca = {
+    tipo: marca,
+    texto: document.getElementById('edTexto').value,
+    opacidad: Number(document.getElementById('edOpa').value),
+    tam: Number(document.getElementById('edTam').value),
+    angulo: Number(document.getElementById('edAng').value)
+  };
+
+  document.getElementById('edColorCaja').classList.toggle('oculto', fondo !== 'color');
+  document.getElementById('edImagenCaja').classList.toggle('oculto', fondo !== 'imagen');
+  document.getElementById('edRecorteCaja').classList.toggle('oculto', fondo === 'normal');
+  document.getElementById('edMarcaImgCaja').classList.toggle('oculto', marca !== 'imagen');
+  document.getElementById('edMarcaTextoCaja').classList.toggle('oculto', marca !== 'texto');
+  document.getElementById('edMarcaOps').classList.toggle('oculto', marca === 'ninguna');
+
+  document.getElementById('edValTol').textContent = S.nivel.acabado.tolerancia;
+  document.getElementById('edValSuave').textContent = S.nivel.acabado.suavizado;
+  document.getElementById('edValEscala').textContent = S.nivel.acabado.escalaImg;
+  document.getElementById('edValOpa').textContent = S.nivel.marca.opacidad;
+  document.getElementById('edValTam').textContent = S.nivel.marca.tam;
+  document.getElementById('edValAng').textContent = S.nivel.marca.angulo;
+
+  var sel = document.getElementById('edMotor');
+  if (!hayIA()) {
+    sel.querySelector('option[value="ia"]').disabled = true;
+    if (sel.value === 'ia') { sel.value = 'color'; S.nivel.acabado.motor = 'color'; }
+  }
+
+  if (!soloMostrar) {
+    if (S.nivel.acabado.motor === 'ia' && fondo !== 'normal') asegurarMascara(repintarTaller);
+    else repintarTaller();
+  }
+}
+
+/* Le saca la máscara a la foto abierta, una sola vez. */
+function asegurarMascara(listo) {
+  var fi = idxFoto2();
+  var a = buscarAlumno(GAL.abierta);
+  if (!GAL.original || !a) return;
+  var archivo = a.v[fi];
+
+  if (MASCARAS[archivo]) { GAL.mascara = MASCARAS[archivo]; listo && listo(); return; }
+
+  var aviso = document.getElementById('edEstadoIA');
+  aviso.textContent = IA.sesion ? 'Separando a la persona…'
+    : 'Bajando el modelo la primera vez, aguántame tantito…';
+
+  sacarMascara(GAL.original).then(function (m) {
+    MASCARAS[archivo] = m;
+    GAL.mascara = m;
+    aviso.textContent = 'Recorte con IA listo.';
+    listo && listo();
+  }).catch(function (e) {
+    aviso.textContent = 'No pude usar la IA: ' + (e.message || e) + ' — sigo con el modo por color.';
+    document.getElementById('edMotor').value = 'color';
+    S.nivel.acabado.motor = 'color';
+    repintarTaller();
+  });
+}
+
+function repintarTaller() {
+  if (!GAL.original) return;
+  var salida = procesar(GAL.original, acabadoActual(), marcaActual(), GAL.mascara);
+  var cv = document.getElementById('lienzoGrande');
+  cv.width = salida.width; cv.height = salida.height;
+  cv.getContext('2d').drawImage(salida, 0, 0);
+  document.getElementById('grandeSub').textContent =
+    GAL.archivo + ' · ' + GAL.medida +
+    (S.nivel.marca.tipo !== 'ninguna' ? ' · la marca de agua no se graba' : '');
+}
+
+// Guarda los ajustes del taller como los del nivel entero.
+function guardarAjustesTaller() {
+  return api('ajustesNivel', {
+    nivelId: S.nivel.id, acabado: acabadoActual(), marca: marcaActual()
+  });
+}
+
+/* Vuelve a guardar ESTA foto en Drive con el fondo nuevo. Sin marca de agua. */
+function guardarEnDrive() {
+  if (!GAL.original || !GAL.abierta) return;
+  var b = document.getElementById('btnGuardarFoto');
+  b.disabled = true; b.textContent = 'Guardando…';
+
+  procesarYSubir(GAL.abierta, GAL.original, GAL.mascara, function (err) {
+    b.disabled = false; b.textContent = 'Guardar esta en Drive';
+    if (err) { fallo(err); return; }
+    guardarAjustesTaller();
+    decir('Lista. Así queda en Drive.');
+    cerrar('velGrande');
+    recargarGaleria();
+  });
+}
+
+function procesarYSubir(alumnoId, fuente, mascara, listo) {
+  var ac = acabadoActual();
+  var salida = procesar(fuente, ac, null, mascara);   // nunca con marca de agua
+  var png = ac.fondo === 'quitar';
+  var url = png ? salida.toDataURL('image/png') : salida.toDataURL('image/jpeg', 0.94);
+
+  api('subirImagen', {
+    nivelId: S.nivel.id, alumnoId: alumnoId, tipo: 'foto',
+    b64: url, ext: png ? 'png' : 'jpg'
+  }).then(function () { listo(null); }).catch(listo);
+}
+
+/* Le hace lo mismo a todas las que están a la vista. */
+function aplicarATodas() {
+  var ac = acabadoActual();
+  if (ac.fondo === 'normal') {
+    decir('Elige primero qué hacer con el fondo', true);
+    return;
+  }
+  var fi = idxFoto2();
+  var lista = listaGaleria().filter(function (a) { return !!a.v[fi]; });
+  if (!lista.length) return;
+
+  if (!confirm('Se le va a cambiar el fondo a ' + lista.length + ' foto' +
+      (lista.length === 1 ? '' : 's') + ' y se reemplazan en Drive.\n\n' +
+      'Drive guarda las versiones anteriores, pero revisa primero una sola ' +
+      'para ver que el recorte te guste.\n\n¿Le seguimos?')) return;
+
+  cerrar('velGrande');
+  guardarAjustesTaller();
+
+  var pendientes = lista.slice(), listas = 0, malas = [];
+
+  function siguiente() {
+    if (!pendientes.length) {
+      decir(malas.length
+        ? 'Terminé. No pude con: ' + malas.join(', ')
+        : 'Listo, ' + listas + ' fotos con el fondo nuevo.');
+      recargarGaleria();
+      return;
+    }
+    var a = pendientes.shift();
+    decir('Procesando ' + nombreDe(a) + '… (' + (listas + malas.length + 1) + ' de ' + lista.length + ')');
+
+    api('fotoGrande', { nivelId: S.nivel.id, nombre: a.v[fi] }).then(function (d) {
+      var im = new Image();
+      im.onload = function () {
+        function sigue(mascara) {
+          procesarYSubir(a._id, im, mascara, function (err) {
+            if (err) malas.push(nombreDe(a)); else listas++;
+            siguiente();
+          });
+        }
+        if (ac.motor === 'ia') {
+          if (MASCARAS[a.v[fi]]) sigue(MASCARAS[a.v[fi]]);
+          else sacarMascara(im).then(function (m) { MASCARAS[a.v[fi]] = m; sigue(m); })
+                               .catch(function () { malas.push(nombreDe(a)); siguiente(); });
+        } else sigue(null);
+      };
+      im.onerror = function () { malas.push(nombreDe(a)); siguiente(); };
+      im.src = 'data:' + d.tipo + ';base64,' + d.b64;
+    }).catch(function () { malas.push(nombreDe(a)); siguiente(); });
+  }
+  siguiente();
+}
+
+function descargarGrande() {
+  var cv = document.getElementById('lienzoGrande');
+  if (!cv.width) return;
+  var png = acabadoActual().fondo === 'quitar';
+  var a = document.createElement('a');
+  a.download = (document.getElementById('grandeNombre').textContent || 'foto') +
+               (marcaActual().tipo !== 'ninguna' ? ' (muestra)' : '') + (png ? '.png' : '.jpg');
+  a.href = png ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.92);
+  a.click();
+}
+
+function repetirDesdeGaleria() {
+  if (GAL.abierta) irARepetir(GAL.abierta);
+}
+
+function irARepetir(alumnoId) {
+  cerrar('velGrande');
+  S.sel = alumnoId;
+  verPestana('camara');
+  pintarRollo();
+  decir('Listo, ese alumno está seleccionado. Prende la cámara y dispara.');
+}
+
+/* subir la imagen de fondo y la de la marca de agua */
+function subirAsset(archivo, cual) {
+  var lector = new FileReader();
+  lector.onload = function (e) {
+    reducirPng(e.target.result, 900, function (b64) {
+      decir('Subiendo la imagen…');
+      api('subirAsset', { escuelaId: S.nivel.escuelaId, b64: b64, cual: cual }).then(function (d) {
+        if (cual === 'fondo') S.nivel.fondoImg = d.url; else S.nivel.marcaImg = d.url;
+        ASSETS[cual] = null;
+        cargarAssets(function () { repintarTaller(); pintarGaleria(); });
+        decir('Imagen lista');
+      }).catch(fallo);
+    });
+  };
+  lector.readAsDataURL(archivo);
+}
+
+document.getElementById('archivoFondo').addEventListener('change', function (ev) {
+  var f = ev.target.files[0]; ev.target.value = '';
+  if (f) subirAsset(f, 'fondo');
+});
+document.getElementById('archivoMarca').addEventListener('change', function (ev) {
+  var f = ev.target.files[0]; ev.target.value = '';
+  if (f) subirAsset(f, 'marca');
+});
+
+/* ═════════════════════════════════════════════════════════════ ajustes */
+
+
+function pintarAjustes() {
+  var n = S.nivel;
+  var ul = document.getElementById('colsLista');
+  ul.innerHTML = '';
+  n.columnas.forEach(function (c) {
+    var li = document.createElement('li');
+    li.innerHTML = '<b>' + esc(c) + '</b>' +
+      '<button class="quitar" title="Quitar columna" onclick="quitarColumna(\'' + esc(c) + '\')">✕</button>';
+    ul.appendChild(li);
+  });
+
+  [['selFoto', n.colFoto], ['selFirma', n.colFirma], ['selNombre', n.colNombre]].forEach(function (par) {
+    var sel = document.getElementById(par[0]);
+    sel.innerHTML = '<option value="">(ninguna)</option>';
+    n.columnas.forEach(function (c) {
+      var o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      sel.appendChild(o);
+    });
+    sel.value = par[1] || '';
+  });
+  document.getElementById('selProp').value = n.proporcion || '3:4';
+
+  var ac = acabadoActual();
+  document.getElementById('selFondo').value = ac.fondo;
+  document.getElementById('colorFondo').value = ac.color;
+  document.getElementById('tolFondo').value = ac.tolerancia;
+  document.getElementById('suaveFondo').value = ac.suavizado;
+  document.getElementById('valTol').textContent = ac.tolerancia;
+  document.getElementById('valSuave').textContent = ac.suavizado;
+  document.getElementById('opsFondo').classList.toggle('oculto', ac.fondo === 'normal');
+}
+
+function vistaAcabado() {
+  var n = S.nivel, antes = acabadoActual();
+  n.acabado = {
+    fondo: document.getElementById('selFondo').value,
+    color: document.getElementById('colorFondo').value,
+    tolerancia: Number(document.getElementById('tolFondo').value),
+    suavizado: Number(document.getElementById('suaveFondo').value),
+    modoImg: antes.modoImg,
+    escalaImg: antes.escalaImg
+  };
+  document.getElementById('opsFondo').classList.toggle('oculto', n.acabado.fondo === 'normal');
+  return n.acabado;
+}
+
+function guardarAcabado() {
+  var ac = vistaAcabado();
+  api('ajustesNivel', { nivelId: S.nivel.id, acabado: ac })
+    .then(function () {
+      decir(ac.fondo === 'normal' ? 'La foto se guarda tal cual'
+           : ac.fondo === 'quitar' ? 'Se guardará en PNG sin fondo'
+           : 'Se guardará con fondo ' + ac.color);
+    }).catch(fallo);
+}
+
+function guardarAjustes() {
+  var n = S.nivel;
+  n.colFoto = document.getElementById('selFoto').value;
+  n.colFirma = document.getElementById('selFirma').value;
+  n.colNombre = document.getElementById('selNombre').value;
+  n.proporcion = document.getElementById('selProp').value;
+  document.getElementById('propFoto').value = n.proporcion;
+  if (ED.fuente) { medirLienzo(); pintarEditor(); }
+  api('ajustesNivel', {
+    nivelId: n.id, colFoto: n.colFoto, colFirma: n.colFirma,
+    colNombre: n.colNombre, proporcion: n.proporcion
+  }).then(function () { decir('Guardado'); pintarTabla(); }).catch(fallo);
+}
+
+function agregarColumna() {
+  var campo = document.getElementById('nuevaCol');
+  var v = campo.value.trim();
+  if (!v) return;
+  api('agregarColumna', { nivelId: S.nivel.id, columna: v }).then(function (d) {
+    campo.value = '';
+    S.nivel.columnas = d.columnas;
+    S.alumnos.forEach(function (a) { a.v.push(''); });
+    pintarAjustes(); pintarTabla();
+    decir('Columna agregada');
+  }).catch(fallo);
+}
+
+function quitarColumna(c) {
+  if (!confirm('Quitar la columna "' + c + '" y todo lo que tiene escrito?')) return;
+  api('quitarColumna', { nivelId: S.nivel.id, columna: c }).then(function () {
+    abrirNivel(S.nivel.id);
+    decir('Columna quitada');
+  }).catch(fallo);
+}
+
+function eliminarNivel() {
+  if (!confirm('Eliminar el nivel "' + S.nivel.nombre + '"?\n\nLos archivos de Drive se quedan.')) return;
+  api('eliminarNivel', { nivelId: S.nivel.id }).then(function () {
+    decir('Nivel eliminado');
+    volverEscuelas();
+  }).catch(fallo);
+}
+
+/* --------------------------------------------------------- fichas QR */
+
+function cargarFicha() {
+  var caja = document.getElementById('estadoFicha');
+  caja.textContent = 'Cargando…';
+  api('fichaEstado', { nivelId: S.nivel.id }).then(function (d) {
+    S.ficha = d;
+    caja.innerHTML = d.activa
+      ? '<b>Activa.</b> ' + d.llenas + ' de ' + d.totales + ' fichas llenas.' +
+        (d.logo ? ' Logo puesto.' : ' Falta subir el logo.') +
+        (d.tieneClave ? '' : ' Falta la contraseña del admin.') +
+        (d.correo ? '' : ' Falta el correo para los avisos.')
+      : 'Sin activar. Al publicar se crea la columna FICHA, se generan los enlaces y se suben las páginas a GitHub.';
+    document.getElementById('btnPublicar').textContent = d.activa ? 'Volver a publicar' : 'Activar y publicar';
+    if (d.correo) document.getElementById('correoEscuela').placeholder = d.correo;
+
+    var e = document.getElementById('enlacesFicha');
+    if (!d.activa || !d.enlaces || !d.enlaces.formulario) { e.innerHTML = ''; return; }
+    e.innerHTML =
+      enlaceFila('Formulario para los papás', d.enlaces.formulario) +
+      enlaceFila('Admin de la escuela', d.enlaces.admin);
+  }).catch(function (err) { caja.textContent = String(err.message || err); });
+}
+
+function enlaceFila(titulo, url) {
+  return '<div style="margin-top:12px">' +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:4px">' + esc(titulo) + '</div>' +
+    '<div style="display:flex;gap:6px">' +
+    '<input type="text" readonly value="' + esc(url) + '" onclick="this.select()" style="font-size:12.5px">' +
+    '<button class="btn claro chico" onclick="copiar(\'' + esc(url) + '\')">Copiar</button>' +
+    '</div></div>';
+}
+
+function copiar(t) {
+  navigator.clipboard.writeText(t).then(function () { decir('Copiado'); })
+    .catch(function () { decir('No pude copiar, selecciónalo a mano', true); });
+}
+
+function publicarFichas() {
+  var b = document.getElementById('btnPublicar');
+  b.disabled = true; b.textContent = 'Publicando…';
+  decir('Subiendo las páginas a GitHub…');
+  api('publicar', { nivelId: S.nivel.id }).then(function () {
+    b.disabled = false;
+    decir('Publicado. Las páginas ya están en el repositorio.');
+    abrirNivel(S.nivel.id);
+  }).catch(function (err) {
+    b.disabled = false; b.textContent = 'Activar y publicar';
+    fallo(err);
+  });
+}
+
+document.getElementById('archivoLogo').addEventListener('change', function (ev) {
+  var f = ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  var lector = new FileReader();
+  lector.onload = function (e) {
+    reducirPng(e.target.result, 600, function (b64) {
+      decir('Subiendo el logo…');
+      api('subirLogo', { escuelaId: S.nivel.escuelaId, b64: b64 }).then(function () {
+        decir('Logo subido. Vuelve a publicar para que salga en las páginas.');
+        cargarFicha();
+      }).catch(fallo);
+    });
+  };
+  lector.readAsDataURL(f);
+});
+
+function reducirPng(dataUrl, maxLado, listo) {
+  var im = new Image();
+  im.onload = function () {
+    var f = Math.min(1, maxLado / Math.max(im.width, im.height));
+    var cv = document.createElement('canvas');
+    cv.width = Math.round(im.width * f);
+    cv.height = Math.round(im.height * f);
+    cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+    listo(cv.toDataURL('image/png'));
+  };
+  im.onerror = function () { fallo(new Error('No pude abrir esa imagen.')); };
+  im.src = dataUrl;
+}
+
+/* ------------------------------------------------- campos de la ficha */
+
+var CAMPOS = [];
+var CAMPOS_SOLO_NIVEL = false;
+var CAMPOS_OTROS = [];
+
+var CAMPOS_CTX = null;
+
+function contextoCampos() {
+  return CAMPOS_CTX || { nivelId: S.nivel.id };
+}
+
+function abrirCampos() {
+  if (!CAMPOS_CTX) CAMPOS_CTX = { nivelId: S.nivel.id };
+  var ctx = contextoCampos();
+  api('campos', ctx).then(function (d) {
+    CAMPOS = d.campos;
+    CAMPOS_OTROS = d.otros || [];
+    CAMPOS_ESCUELA = d.escuela || '';
+    ponerAlcance(!!d.propio);
+    pintarCampos();
+    abrir('velCampos');
+  }).catch(fallo);
+}
+
+var CAMPOS_ESCUELA = '';
+
+function ponerAlcance(soloNivel) {
+  var deEscuela = !!(CAMPOS_CTX && CAMPOS_CTX.escuelaId);
+  document.getElementById('alcNivel').style.display = deEscuela ? 'none' : '';
+  document.getElementById('alcEscuela').style.display = deEscuela ? 'none' : '';
+  if (deEscuela) {
+    CAMPOS_SOLO_NIVEL = false;
+    document.getElementById('alcanceNota').textContent = CAMPOS_OTROS.length
+      ? 'Al guardar quedan iguales todos los niveles, incluidos ' + CAMPOS_OTROS.join(', ') +
+        ', que hoy llevan campos aparte.'
+      : 'Estos campos los usan todos los niveles de la escuela.';
+    return;
+  }
+  CAMPOS_SOLO_NIVEL = !!soloNivel;
+  document.getElementById('alcEscuela').className = soloNivel ? '' : 'activo';
+  document.getElementById('alcNivel').className = soloNivel ? 'activo' : '';
+  var nota = document.getElementById('alcanceNota');
+  if (soloNivel) {
+    nota.textContent = 'Estos campos serán solo de ' + S.nivel.nombre +
+      '. El resto de la escuela sigue con los suyos.';
+  } else if (CAMPOS_OTROS.length) {
+    nota.textContent = 'Al guardar, todos los niveles quedan iguales — incluidos ' +
+      CAMPOS_OTROS.join(', ') + ', que hoy llevan campos aparte.';
+  } else {
+    nota.textContent = 'Todos los niveles de la escuela usan estos campos.';
+  }
+}
+
+function pintarCampos() {
+  var cont = document.getElementById('listaCampos');
+  cont.innerHTML = CAMPOS.map(function (c, i) {
+    var opciones = (c.opciones || []).join(', ');
+    return '<div class="campo-fila">' +
+      '<div class="arriba">' +
+        '<button class="mover" onclick="moverCampo(' + i + ',-1)" title="Subir">↑</button>' +
+        '<button class="mover" onclick="moverCampo(' + i + ',1)" title="Bajar">↓</button>' +
+        '<input type="text" value="' + esc(c.etiqueta) + '" oninput="CAMPOS[' + i + '].etiqueta=this.value">' +
+        '<button class="icono rojo" onclick="quitarCampo(' + i + ')" title="Quitar">✕</button>' +
+      '</div>' +
+      '<div class="abajo">' +
+        '<button class="ojo ' + (c.publico ? 'abierto' : 'cerrado') + '" onclick="alternarOjo(' + i + ')">' +
+          (c.publico ? 'Se ve al escanear' : 'Pide autorización') + '</button>' +
+        '<select onchange="cambiarTipo(' + i + ',this.value)">' +
+          ['texto', 'parrafo', 'telefono', 'lista', 'casilla'].map(function (t) {
+            var nombres = { texto: 'Texto corto', parrafo: 'Texto largo', telefono: 'Teléfono',
+                            lista: 'Lista', casilla: 'Sí o no' };
+            return '<option value="' + t + '"' + (c.tipo === t ? ' selected' : '') + '>' + nombres[t] + '</option>';
+          }).join('') +
+        '</select>' +
+        '<label><input type="checkbox" ' + (c.requerido ? 'checked' : '') +
+          ' onchange="CAMPOS[' + i + '].requerido=this.checked"> Obligatorio</label>' +
+        (c.tipo === 'lista'
+          ? '<input type="text" value="' + esc(opciones) + '" placeholder="Opciones separadas por coma" ' +
+            'oninput="CAMPOS[' + i + '].opciones=this.value.split(\',\')" style="flex:1;min-width:180px;font-size:13px;padding:6px 9px">'
+          : '') +
+      '</div></div>';
+  }).join('') || '<p class="vacio">No queda ningún campo. Agrega al menos uno.</p>';
+}
+
+function alternarOjo(i) { CAMPOS[i].publico = !CAMPOS[i].publico; pintarCampos(); }
+function cambiarTipo(i, t) {
+  CAMPOS[i].tipo = t;
+  if (t === 'lista' && !(CAMPOS[i].opciones || []).length) CAMPOS[i].opciones = [];
+  pintarCampos();
+}
+function quitarCampo(i) { CAMPOS.splice(i, 1); pintarCampos(); }
+function moverCampo(i, paso) {
+  var j = i + paso;
+  if (j < 0 || j >= CAMPOS.length) return;
+  var t = CAMPOS[i]; CAMPOS[i] = CAMPOS[j]; CAMPOS[j] = t;
+  pintarCampos();
+}
+
+function agregarCampo() {
+  var campo = document.getElementById('campoNuevo');
+  var v = campo.value.trim();
+  if (!v) { decir('Escribe el nombre del campo', true); return; }
+  CAMPOS.push({
+    clave: '', etiqueta: v, tipo: document.getElementById('campoTipo').value,
+    publico: false, requerido: false, activo: true, opciones: []
+  });
+  campo.value = '';
+  pintarCampos();
+  var caja = document.getElementById('listaCampos');
+  caja.scrollTop = caja.scrollHeight;
+}
+
+document.getElementById('campoNuevo').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') agregarCampo();
+});
+
+function restaurarCampos() {
+  if (!confirm('¿Traer de vuelta los campos de fábrica? Pierdes los cambios de esta ventana.')) return;
+  var ctx = contextoCampos(); ctx.restaurar = true;
+  api('campos', ctx).then(function (d) {
+    CAMPOS = d.campos;
+    pintarCampos();
+    decir('Ahí están. Dale Guardar para dejarlos.');
+  }).catch(fallo);
+}
+
+function guardarCampos() {
+  if (!CAMPOS.length) { decir('Deja al menos un campo', true); return; }
+  var b = document.getElementById('btnGuardarCampos');
+  b.disabled = true; b.textContent = 'Guardando…';
+  var ctx = contextoCampos();
+  api('guardarCampos', {
+    nivelId: ctx.nivelId || '', escuelaId: ctx.escuelaId || '',
+    campos: CAMPOS, soloEsteNivel: CAMPOS_SOLO_NIVEL
+  }).then(function (d) {
+    CAMPOS = d.campos;
+    b.disabled = false; b.textContent = 'Guardar';
+    cerrar('velCampos');
+    decir(d.alcance === 'escuela'
+      ? 'Campos guardados para toda la escuela'
+      : 'Campos guardados solo para ' + S.nivel.nombre);
+    CAMPOS_CTX = null;
+  }).catch(function (err) {
+    b.disabled = false; b.textContent = 'Guardar';
+    fallo(err);
+  });
+}
+
+function guardarCorreoEscuela() {
+  var v = document.getElementById('correoEscuela').value.trim();
+  api('correoEscuela', { escuelaId: S.nivel.escuelaId, correo: v }).then(function () {
+    document.getElementById('correoEscuela').value = '';
+    decir('Correo guardado');
+    cargarFicha();
+  }).catch(fallo);
+}
+
+function guardarClaveEscuela() {
+  var v = document.getElementById('claveEscuela').value.trim();
+  api('claveEscuela', { escuelaId: S.nivel.escuelaId, clave: v }).then(function () {
+    document.getElementById('claveEscuela').value = '';
+    decir('Contraseña guardada. Dásela a la escuela.');
+    cargarFicha();
+  }).catch(fallo);
+}
+
+/* -------------------------------------------------------------- excel */
+
+function exportar() {
+  if (COLA.length && !confirm('Todavía hay ' + COLA.length + ' imagen(es) sin subir. Exportar de todos modos?')) return;
+  decir('Armando el Excel…');
+  api('exportar', { nivelId: S.nivel.id }).then(function (d) {
+    document.getElementById('ultimoExport').innerHTML =
+      (d.reemplazado ? 'Reemplazado: ' : 'Creado: ') + '<b>' + esc(d.nombre) + '</b> · ' +
+      d.filas + ' filas · <a href="' + d.url + '" target="_blank" rel="noopener">abrir</a>';
+    decir(d.reemplazado ? 'Excel actualizado en Drive' : 'Excel creado en Drive');
+  }).catch(fallo);
+}
+
+function descargarLocal() {
+  var datos = [S.nivel.columnas].concat(S.alumnos.map(function (a) { return a.v; }));
+  var hoja = XLSX.utils.aoa_to_sheet(datos);
+  var libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, 'Alumnos');
+  XLSX.writeFile(libro, S.nivel.escuela + ' - ' + S.nivel.nombre + '.xlsx');
+}
+
+function abrirCarpetaNivel() { window.open(S.nivel.carpeta, '_blank'); }
+function abrirDrive() { window.open(S.raiz || 'https://drive.google.com', '_blank'); }
+
+/* ═════════════════════════════════════════════════════════════ modales */
+
+function abrir(id) { document.getElementById(id).classList.add('on'); }
+function cerrar(id) { document.getElementById(id).classList.remove('on'); }
+
+document.querySelectorAll('.velo').forEach(function (v) {
+  v.addEventListener('click', function (e) { if (e.target === v) v.classList.remove('on'); });
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    var abierto = document.querySelector('.velo.on');
+    if (abierto) abierto.classList.remove('on');
+  }
+});
+</script>
+</body>
+</html>
