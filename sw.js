@@ -4,7 +4,7 @@
    Sube el numero de abajo cada vez que cambie index.html.
    ============================================================ */
 
-var VERSION = 'alumna-v35';
+var VERSION = 'alumna-v36';
 
 var BASICOS = [
   './',
