@@ -4,13 +4,14 @@
    Sube el numero de abajo cada vez que cambie index.html.
    ============================================================ */
 
-var VERSION = 'alumna-v36';
+var VERSION = 'alumna-v37';
 
 var BASICOS = [
   './',
   './index.html',
   './config.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
 self.addEventListener('install', function (ev) {
