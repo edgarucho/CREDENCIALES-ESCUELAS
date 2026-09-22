@@ -288,6 +288,14 @@
 .pestana input[type=text]{flex:1;min-width:120px}
 .pestana .cuenta{font-size:12px;color:var(--muted);white-space:nowrap}
 .pestana.vacia{opacity:.45}
+.comparar{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 2px}
+.comparar figure{margin:0}
+.comparar figcaption{font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center}
+.comparar .hueco{aspect-ratio:3/4;background:var(--paper-2);border:1px solid var(--line);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.comparar .hueco img{width:100%;height:100%;object-fit:contain;display:block}
+.comparar .hueco .aviso{font-size:12px;color:var(--muted-osc);padding:12px;text-align:center}
+.comparar figure:last-child .hueco{border-color:var(--accent)}
 .campo-fila{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px;
               margin-bottom:8px}
   .campo-fila .arriba{display:flex;gap:7px;align-items:center;margin-bottom:8px}
@@ -327,7 +335,7 @@
 <div id="app" class="oculto">
   <div class="barra">
     <div class="marca"><span class="pt"></span> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v35</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v36</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -491,6 +499,11 @@
             <label class="campo"><span>Columna de la foto</span><select id="selFoto" onchange="guardarAjustes()"></select></label>
             <label class="campo"><span>Columna de la firma</span><select id="selFirma" onchange="guardarAjustes()"></select></label>
             <label class="campo"><span>Nombrar los archivos con</span><select id="selNombre" onchange="guardarAjustes()"></select></label>
+            <label class="campo" style="flex-direction:row;align-items:center;gap:8px">
+              <input type="checkbox" id="avisarPisar" onchange="cambiarAvisarPisar()"
+                     style="width:auto;margin:0">
+              <span style="margin:0">Preguntar antes de reemplazar una foto o firma ya guardada</span>
+            </label>
             <label class="campo"><span>Proporción de la foto</span>
               <select id="selProp" onchange="guardarAjustes()">
                 <option value="3:4">Vertical 3:4 — lo normal</option>
@@ -789,6 +802,28 @@
 
 <input type="file" id="archivoLogoEsc" accept="image/png,image/jpeg" style="display:none">
 
+<div class="velo" id="velReemplazo">
+  <div class="cuadro ancho">
+    <h2 id="repTitulo"></h2>
+    <p class="entrada" id="repQuien"></p>
+    <div class="comparar">
+      <figure>
+        <figcaption>La que ya está guardada</figcaption>
+        <div class="hueco" id="repAntes"></div>
+      </figure>
+      <figure>
+        <figcaption>La nueva</figcaption>
+        <div class="hueco" id="repDespues"></div>
+      </figure>
+    </div>
+    <p class="pie" id="repNota"></p>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cancelarReemplazo()">No, cancelar</button>
+      <button class="btn fuego" onclick="confirmarReemplazo()">Sí, reemplazar</button>
+    </div>
+  </div>
+</div>
+
 <div class="velo" id="velModelo">
   <div class="cuadro">
     <h2>Modelo de IA</h2>
@@ -959,7 +994,9 @@ var S = {
   raiz: '',
   origen: 'manual',
   importadas: null,   // {cabeceras:[], filas:[[]]}
-  pendiente: {}       // _id+tipo -> true mientras está en la cola
+  pendiente: {},      // _id+tipo -> true mientras está en la cola
+  conservarToma: false,
+  avisarPisar: leeLocal('alumna_avisar') !== '0'   // preguntar antes de pisar una foto
 };
 
 function guardaLocal(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
@@ -2036,7 +2073,7 @@ function pintarRollo() {
     li.className = a._id === S.sel ? 'on' : '';
     li.innerHTML = '<span class="luz ' + clase + '"></span><span class="nom">' +
       esc(nombreDe(a)) + '</span>';
-    li.onclick = function () { S.sel = a._id; repetir(); pintarRollo(); };
+    li.onclick = function () { S.sel = a._id; if (!S.conservarToma) repetir(); pintarRollo(); };
     ul.appendChild(li);
   });
 
@@ -2194,6 +2231,7 @@ window.addEventListener('resize', function () {
 var ED = { fuente: null, zoom: 1, giro: 0, brillo: 100, contraste: 100, ox: 0, oy: 0 };
 
 function disparar() {
+  S.conservarToma = false;
   if (S.toma) return repetir();
   var v = document.getElementById('video');
   if (!S.stream || !v.videoWidth) { decir('Prende la cámara primero', true); return; }
@@ -2901,13 +2939,97 @@ function verSalida() {
   w.document.close();
 }
 
+
+/* ═══════════════════════ no pisar una foto por error ═══════════════════════
+
+   Guardar encima borra de Drive la foto anterior. Si el alumno elegido ya
+   tiene una, primero se enseñan las dos lado a lado y se pregunta.          */
+
+var REEMP = { tipo: '', alumnoId: '', salida: null };
+var PREVIAS = {};   // miniaturas de lo que ya está guardado
+
+function yaTiene(alumnoId, tipo) {
+  var a = buscarAlumno(alumnoId);
+  if (!a) return '';
+  var ci = tipo === 'firma' ? idxFirma() : idxFoto();
+  if (ci >= 0) {
+    var v = String(a.v[ci] || '').trim();
+    if (v) return v;
+  }
+  if (S.pendiente[alumnoId + tipo]) return 'pendiente';
+  return '';
+}
+
+function pedirReemplazo(tipo, alumnoId, salida, anterior) {
+  REEMP = { tipo: tipo, alumnoId: alumnoId, salida: salida };
+  var a = buscarAlumno(alumnoId);
+
+  document.getElementById('repTitulo').textContent =
+    tipo === 'firma' ? 'Este alumno ya tiene firma' : 'Este alumno ya tiene foto';
+  document.getElementById('repQuien').textContent = a ? nombreDe(a) : '';
+  document.getElementById('repNota').textContent = tipo === 'firma'
+    ? 'Si reemplazas, la firma anterior se borra de Drive.'
+    : 'Si reemplazas, la foto anterior se borra de Drive. Si te equivocaste de ' +
+      'alumno, cancela: la toma se queda en pantalla para que elijas al correcto.';
+
+  document.getElementById('repDespues').innerHTML = '<img src="' + salida.url + '">';
+  pintarAnterior(anterior, tipo);
+  if (tipo === 'firma') cerrar('velFirma');
+  abrir('velReemplazo');
+}
+
+function pintarAnterior(nombre, tipo) {
+  var hueco = document.getElementById('repAntes');
+  if (nombre === 'pendiente') {
+    hueco.innerHTML = '<div class="aviso">La tomaste hace un momento.<br>Todavía se está subiendo.</div>';
+    return;
+  }
+  var llave = tipo + ':' + nombre;
+  if (PREVIAS[llave]) { hueco.innerHTML = '<img src="' + PREVIAS[llave] + '">'; return; }
+
+  hueco.innerHTML = '<div class="aviso">Trayéndola de Drive…</div>';
+  api('miniaturas', { nivelId: S.nivel.id, nombres: [nombre], tipo: tipo }).then(function (d) {
+    var f = d.fotos && d.fotos[0];
+    if (f && f.b64) {
+      PREVIAS[llave] = 'data:' + (f.tipo || 'image/jpeg') + ';base64,' + f.b64;
+      hueco.innerHTML = '<img src="' + PREVIAS[llave] + '">';
+    } else {
+      hueco.innerHTML = '<div class="aviso">' + esc(nombre) + '</div>';
+    }
+  }).catch(function () {
+    hueco.innerHTML = '<div class="aviso">No pude traerla.<br>' + esc(nombre) + '</div>';
+  });
+}
+
+function confirmarReemplazo() {
+  cerrar('velReemplazo');
+  if (REEMP.tipo === 'firma') guardarFirmaAhora(REEMP.alumnoId, REEMP.salida.url);
+  else guardarFotoAhora(REEMP.alumnoId, REEMP.salida);
+  REEMP.salida = null;
+}
+
+function cancelarReemplazo() {
+  cerrar('velReemplazo');
+  if (REEMP.tipo === 'firma') { abrir('velFirma'); REEMP.salida = null; return; }
+  // la toma se conserva aunque cambie de alumno, para poder corregir
+  S.conservarToma = true;
+  REEMP.salida = null;
+  decir('No se tocó nada. Elige al alumno correcto y vuelve a guardar.');
+}
+
 function guardarFoto() {
   if (!ED.fuente || !S.sel) return;
   var salida = exportarEditor();
-  encolar({ nivelId: S.nivel.id, alumnoId: S.sel, tipo: 'foto', b64: salida.url, ext: salida.ext });
-  var quien = S.sel;
-  siguientePendiente(quien);
-  repetir();
+  var anterior = S.avisarPisar ? yaTiene(S.sel, 'foto') : '';
+  if (anterior) { pedirReemplazo('foto', S.sel, salida, anterior); return; }
+  guardarFotoAhora(S.sel, salida);
+}
+
+function guardarFotoAhora(quien, salida) {
+  encolar({ nivelId: S.nivel.id, alumnoId: quien, tipo: 'foto', b64: salida.url, ext: salida.ext });
+  S.conservarToma = false;
+  if (S.sel === quien) { siguientePendiente(quien); repetir(); }
+  else pintarRollo();
   decir('Guardada. Va la siguiente.');
 }
 
@@ -2928,7 +3050,7 @@ function moverSeleccion(paso) {
   var i = lista.findIndex(function (a) { return a._id === S.sel; });
   var n = (i + paso + lista.length) % lista.length;
   S.sel = lista[n]._id;
-  repetir();
+  if (!S.conservarToma) repetir();
   pintarRollo();
 }
 
@@ -3142,7 +3264,13 @@ function limpiarFirma() {
 function guardarFirma() {
   if (!hayTrazo) { decir('Firma primero', true); return; }
   var recortada = recortarTransparente(lienzo);
-  encolar({ nivelId: S.nivel.id, alumnoId: S.sel, tipo: 'firma', b64: recortada });
+  var anterior = S.avisarPisar ? yaTiene(S.sel, 'firma') : '';
+  if (anterior) { pedirReemplazo('firma', S.sel, { url: recortada, ext: 'png' }, anterior); return; }
+  guardarFirmaAhora(S.sel, recortada);
+}
+
+function guardarFirmaAhora(quien, dataUrl) {
+  encolar({ nivelId: S.nivel.id, alumnoId: quien, tipo: 'firma', b64: dataUrl });
   cerrar('velFirma');
   decir('Firma guardada');
 }
@@ -3982,6 +4110,7 @@ function pintarAjustes() {
     sel.value = par[1] || '';
   });
   document.getElementById('selProp').value = n.proporcion || '3:4';
+  document.getElementById('avisarPisar').checked = S.avisarPisar;
 
   var ac = acabadoActual();
   document.getElementById('selFondo').value = ac.fondo;
@@ -4015,6 +4144,14 @@ function guardarAcabado() {
            : ac.fondo === 'quitar' ? 'Se guardará en PNG sin fondo'
            : 'Se guardará con fondo ' + ac.color);
     }).catch(fallo);
+}
+
+function cambiarAvisarPisar() {
+  S.avisarPisar = document.getElementById('avisarPisar').checked;
+  guardaLocal('alumna_avisar', S.avisarPisar ? '1' : '0');
+  decir(S.avisarPisar
+    ? 'Te voy a avisar antes de pisar una foto'
+    : 'Ya no te aviso. Guardar encima borra la anterior sin preguntar.');
 }
 
 function guardarAjustes() {
