@@ -288,6 +288,17 @@
 .pestana input[type=text]{flex:1;min-width:120px}
 .pestana .cuenta{font-size:12px;color:var(--muted);white-space:nowrap}
 .pestana.vacia{opacity:.45}
+.ent-nivel{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.ent-nivel > header{display:flex;gap:10px;align-items:center;padding:9px 12px;
+  background:var(--paper-2);cursor:pointer;user-select:none}
+.ent-nivel > header b{flex:1;font-size:14px}
+.ent-nivel > header .cuenta{font-size:12px;color:var(--muted)}
+.ent-nivel ul{list-style:none;margin:0;padding:4px 0;max-height:260px;overflow:auto}
+.ent-nivel li{display:flex;gap:9px;align-items:center;padding:5px 12px;font-size:13px}
+.ent-nivel li:hover{background:var(--paper-2)}
+.ent-nivel li label{flex:1;cursor:pointer}
+.ent-nivel li .sinfoto{font-size:11px;color:var(--muted-osc)}
+.ent-nivel.cerrado ul{display:none}
 .comparar{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 2px}
 .comparar figure{margin:0}
 .comparar figcaption{font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center}
@@ -335,7 +346,7 @@
 <div id="app" class="oculto">
   <div class="barra">
     <div class="marca"><span class="pt"></span> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v36</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v37</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -352,6 +363,7 @@
           <p>Cada escuela guarda sus niveles, sus fotos y su Excel en Drive.</p>
         </div>
         <div class="crece"></div>
+        <button class="btn claro" onclick="abrirEntrega()">Hoja de entrega</button>
         <button class="btn fuego" onclick="pedirEscuela()">Nueva escuela</button>
       </div>
       <div class="escuelas" id="listaEscuelas"></div>
@@ -802,6 +814,58 @@
 
 <input type="file" id="archivoLogoEsc" accept="image/png,image/jpeg" style="display:none">
 
+<div class="velo" id="velEntrega">
+  <div class="cuadro ancho">
+    <h2>Hoja de entrega</h2>
+    <p class="entrada">Marca lo que vas a entregar. Sale un PDF con el desglose,
+       el total y el espacio para la firma de recibido.</p>
+
+    <label class="campo"><span>Escuela</span>
+      <select id="entEscuela" onchange="cargarEntrega()"></select>
+    </label>
+
+    <div id="entCuerpo" class="oculto">
+      <label class="campo"><span>Nombre completo, como debe salir en el documento</span>
+        <input type="text" id="entLargo" placeholder="INSTITUTO VERSALLES"></label>
+
+      <div class="linea" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0">
+        <button class="btn claro chico" onclick="marcarEntrega('todos')">Marcar todos</button>
+        <button class="btn claro chico" onclick="marcarEntrega('foto')">Solo los que tienen foto</button>
+        <button class="btn claro chico" onclick="marcarEntrega('nadie')">Desmarcar todos</button>
+        <div class="crece"></div>
+        <span class="mono" id="entConteo"></span>
+      </div>
+
+      <div id="entLista" style="max-height:42dvh;overflow:auto;padding-right:4px"></div>
+
+      <div class="linea" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:14px">
+        <label class="campo" style="max-width:190px;margin:0">
+          <span>Precio por credencial</span>
+          <input type="text" id="entPrecio" inputmode="decimal" placeholder="45"
+                 oninput="pintarTotalEntrega()"></label>
+        <label class="campo" style="max-width:190px;margin:0">
+          <span>Fecha del documento</span>
+          <input type="date" id="entFecha"></label>
+        <div class="crece"></div>
+        <div style="text-align:right">
+          <div class="pie" style="margin:0">Total</div>
+          <div id="entTotal" style="font-size:24px;font-weight:600">$0.00</div>
+        </div>
+      </div>
+      <label class="campo" style="margin-top:10px"><span>Nota extra (opcional)</span>
+        <input type="text" id="entNota" placeholder="Reposiciones, credenciales de docentes…"></label>
+    </div>
+
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velEntrega')">Cerrar</button>
+      <button class="btn claro" onclick="document.getElementById('archivoLogoEstudio').click()">Logo del estudio</button>
+      <button class="btn fuego" id="btnEntregaPdf" onclick="generarEntrega()">Crear el PDF</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="archivoLogoEstudio" accept="image/png,image/jpeg" style="display:none">
+
 <div class="velo" id="velReemplazo">
   <div class="cuadro ancho">
     <h2 id="repTitulo"></h2>
@@ -961,6 +1025,7 @@
 <meta name="apple-mobile-web-app-title" content="ALUM-NA">
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   // Guarda la aplicación en el aparato para que abra sin internet.
   if ('serviceWorker' in navigator) {
@@ -1207,7 +1272,7 @@ function salir() {
   });
 })();
 
-var API_QUE_NECESITO = 35;
+var API_QUE_NECESITO = 37;
 
 function revisarVersionApi(d) {
   if (d && d.api >= API_QUE_NECESITO) return;
@@ -2939,6 +3004,465 @@ function verSalida() {
   w.document.close();
 }
 
+
+
+/* ═════════════════════════════════════════════════════ hoja de entrega ═══ */
+
+var ENT = { escuelaId: '', niveles: [], marcados: {}, logo: null };
+
+function abrirEntrega() {
+  if (necesitaRed('traer los alumnos')) return;
+  var sel = document.getElementById('entEscuela');
+  sel.innerHTML = '<option value="">Elige la escuela…</option>' +
+    S.escuelas.map(function (e) {
+      return '<option value="' + esc(e.id) + '">' + esc(e.nombre) + '</option>';
+    }).join('');
+
+  document.getElementById('entCuerpo').classList.add('oculto');
+  document.getElementById('entFecha').value = hoyISO();
+  document.getElementById('entPrecio').value = leeLocal('alumna_precio') || '';
+  document.getElementById('entNota').value = '';
+  abrir('velEntrega');
+}
+
+function hoyISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate());
+}
+function dos(n) { return (n < 10 ? '0' : '') + n; }
+
+function cargarEntrega() {
+  var id = document.getElementById('entEscuela').value;
+  if (!id) { document.getElementById('entCuerpo').classList.add('oculto'); return; }
+
+  decir('Trayendo a los alumnos…');
+  api('entrega', { escuelaId: id }).then(function (d) {
+    ENT.escuelaId = id;
+    ENT.niveles = d.niveles.filter(function (n) { return n.alumnos.length; });
+    ENT.marcados = {};
+    ENT.niveles.forEach(function (n) {
+      n.alumnos.forEach(function (a) { ENT.marcados[a.id] = a.foto; });
+    });
+    document.getElementById('entLargo').value = d.largo || d.escuela || '';
+    document.getElementById('entCuerpo').classList.remove('oculto');
+    pintarEntrega();
+    decir('');
+  }).catch(fallo);
+}
+
+function pintarEntrega() {
+  document.getElementById('entLista').innerHTML = ENT.niveles.map(function (n, k) {
+    var marcados = n.alumnos.filter(function (a) { return ENT.marcados[a.id]; }).length;
+    return '<div class="ent-nivel" id="entN' + k + '">' +
+      '<header onclick="plegarNivel(' + k + ')">' +
+        '<input type="checkbox" onclick="event.stopPropagation();marcarNivel(' + k + ',this.checked)"' +
+          (marcados === n.alumnos.length ? ' checked' : '') + '>' +
+        '<b>' + esc(n.nombre) + '</b>' +
+        '<span class="cuenta">' + marcados + ' de ' + n.alumnos.length + '</span>' +
+      '</header>' +
+      '<ul>' + n.alumnos.map(function (a) {
+        return '<li>' +
+          '<input type="checkbox" id="ea' + esc(a.id) + '"' + (ENT.marcados[a.id] ? ' checked' : '') +
+            ' onchange="marcarAlumno(\'' + esc(a.id) + '\',this.checked)">' +
+          '<label for="ea' + esc(a.id) + '">' + esc(a.nombre) + '</label>' +
+          (a.foto ? '' : '<span class="sinfoto">sin foto</span>') +
+          '</li>';
+      }).join('') + '</ul></div>';
+  }).join('') || '<p class="vacio">Esta escuela todavía no tiene alumnos.</p>';
+  pintarTotalEntrega();
+}
+
+function plegarNivel(k) {
+  document.getElementById('entN' + k).classList.toggle('cerrado');
+}
+
+function marcarAlumno(id, si) {
+  ENT.marcados[id] = si;
+  pintarEntrega();
+}
+
+function marcarNivel(k, si) {
+  ENT.niveles[k].alumnos.forEach(function (a) { ENT.marcados[a.id] = si; });
+  pintarEntrega();
+}
+
+function marcarEntrega(modo) {
+  ENT.niveles.forEach(function (n) {
+    n.alumnos.forEach(function (a) {
+      ENT.marcados[a.id] = modo === 'todos' ? true : modo === 'foto' ? a.foto : false;
+    });
+  });
+  pintarEntrega();
+}
+
+function cuentaEntrega() {
+  var t = 0;
+  ENT.niveles.forEach(function (n) {
+    n.alumnos.forEach(function (a) { if (ENT.marcados[a.id]) t++; });
+  });
+  return t;
+}
+
+function precioEntrega() {
+  return Number(String(document.getElementById('entPrecio').value).replace(/[^0-9.]/g, '')) || 0;
+}
+
+function pintarTotalEntrega() {
+  var n = cuentaEntrega(), p = precioEntrega();
+  document.getElementById('entConteo').textContent =
+    n + ' credencial' + (n === 1 ? '' : 'es') + ' marcada' + (n === 1 ? '' : 's');
+  document.getElementById('entTotal').textContent = pesos(n * p);
+}
+
+function pesos(v) {
+  return '$' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/* ───────────────────────── numeros en letras ───────────────────────── */
+
+function grupoMenor(n) {
+  var UNO = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez',
+             'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho',
+             'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro',
+             'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+  var DEC = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+  var CEN = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos',
+             'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+  if (!n) return '';
+  if (n === 100) return 'cien';
+  var c = Math.floor(n / 100), r = n % 100, t = CEN[c];
+  if (r) {
+    if (t) t += ' ';
+    if (r < 30) t += UNO[r];
+    else {
+      var d = Math.floor(r / 10), u = r % 10;
+      t += DEC[d] + (u ? ' y ' + UNO[u] : '');
+    }
+  }
+  return t;
+}
+
+function apocope(t) {
+  return t.replace(/veintiuno$/, 'veintiún').replace(/(^|\s)uno$/, '$1un');
+}
+
+function enLetras(n) {
+  n = Math.floor(Math.abs(n));
+  if (!n) return 'cero';
+  var mill = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), resto = n % 1000;
+  var p = [];
+  if (mill) p.push(mill === 1 ? 'un millón' : apocope(grupoMenor(mill)) + ' millones');
+  if (miles) p.push(miles === 1 ? 'mil' : apocope(grupoMenor(miles)) + ' mil');
+  if (resto) p.push(grupoMenor(resto));
+  return p.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function pesosEnLetras(v) {
+  var ent = Math.floor(v), cent = Math.round((v - ent) * 100);
+  var t = apocope(enLetras(ent));
+  return t + ' peso' + (ent === 1 ? '' : 's') + ' ' + dos(cent) + '/100 M.N.';
+}
+
+var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function fechaLarga(iso) {
+  var p = String(iso || '').split('-');
+  if (p.length !== 3) return '';
+  return Number(p[2]) + ' de ' + MESES[Number(p[1]) - 1] + ' de ' + p[0];
+}
+
+/* ───────────────────────── logo del estudio ───────────────────────── */
+
+function guardarLogoEstudio(dataUrl) {
+  return bdIA().then(function (db) {
+    return new Promise(function (ok) {
+      var t = db.transaction('modelos', 'readwrite');
+      t.objectStore('modelos').put(dataUrl, 'logoEstudio');
+      t.oncomplete = function () { ENT.logo = dataUrl; ok(); };
+      t.onerror = function () { ok(); };
+    });
+  }).catch(function () {});
+}
+
+function leerLogoEstudio() {
+  if (ENT.logo) return Promise.resolve(ENT.logo);
+  return bdIA().then(function (db) {
+    return new Promise(function (ok) {
+      var r = db.transaction('modelos', 'readonly').objectStore('modelos').get('logoEstudio');
+      r.onsuccess = function () { ENT.logo = r.result || null; ok(ENT.logo); };
+      r.onerror = function () { ok(null); };
+    });
+  }).catch(function () { return null; });
+}
+
+document.getElementById('archivoLogoEstudio').addEventListener('change', function (ev) {
+  var f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  var lector = new FileReader();
+  lector.onload = function (e) {
+    reducirPng(e.target.result, 700, function (b64) {
+      guardarLogoEstudio(b64).then(function () {
+        decir('Logo guardado. Va a salir arriba de la hoja de entrega.');
+      });
+    });
+  };
+  lector.readAsDataURL(f);
+});
+
+/* ───────────────────────── el documento ───────────────────────── */
+
+function generarEntrega() {
+  var cuantas = cuentaEntrega();
+  if (!cuantas) { decir('Marca al menos un alumno', true); return; }
+
+  var precio = precioEntrega();
+  if (!precio && !confirm('No pusiste precio. ¿Hacer la hoja sin importes?')) return;
+
+  var largo = document.getElementById('entLargo').value.trim();
+  if (!largo) { decir('Escribe el nombre completo de la escuela', true); return; }
+
+  var b = document.getElementById('btnEntregaPdf');
+  b.disabled = true; b.textContent = 'Armando…';
+  guardaLocal('alumna_precio', String(precio || ''));
+  api('nombreLargo', { escuelaId: ENT.escuelaId, largo: largo }).catch(function () {});
+
+  leerLogoEstudio().then(medirLogo).then(function (logo) {
+    try { armarPdfEntrega(largo, precio, cuantas, logo); decir('PDF listo'); }
+    catch (e) { fallo(e); }
+    b.disabled = false; b.textContent = 'Crear el PDF';
+  });
+}
+
+// Devuelve el logo con sus medidas, para que no salga deformado en el PDF.
+function medirLogo(url) {
+  if (!url) return Promise.resolve(null);
+  return new Promise(function (ok) {
+    var im = new Image();
+    im.onload = function () { ok({ url: url, w: im.width, h: im.height }); };
+    im.onerror = function () { ok(null); };
+    im.src = url;
+  });
+}
+
+function armarPdfEntrega(largo, precio, cuantas, logo) {
+  var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter' });
+  var AN = 215.9, ALT = 279.4;
+  var M = 20, ancho = AN - M * 2;
+  var y = 0, pagina = 1;
+
+  function nuevaPagina() {
+    doc.addPage(); pagina++;
+    y = 18;
+  }
+  function cabeSitio(alto) {
+    if (y + alto > ALT - 22) { nuevaPagina(); return false; }
+    return true;
+  }
+
+  /* ---- membrete ---- */
+  y = 16;
+  if (logo) {
+    try {
+      var MAXAN = 78, MAXAL = 26;                 // el logo cabe dentro de esto
+      var f = Math.min(MAXAN / logo.w, MAXAL / logo.h);
+      var an = logo.w * f, al = logo.h * f;
+      doc.addImage(logo.url, 'PNG', (AN - an) / 2, y, an, al, undefined, 'FAST');
+      y += al + 5;
+    } catch (e) { y += 2; }
+  }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(logo ? 12 : 15);
+  doc.text('FOTO ESTUDIO GRACIELA', AN / 2, y, { align: 'center' });
+  y += logo ? 4.5 : 5.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.setTextColor(110);
+  doc.text('Credenciales escolares · Iguala de la Independencia, Guerrero', AN / 2, y, { align: 'center' });
+  doc.setTextColor(0);
+  y += 5;
+  doc.setDrawColor(190); doc.setLineWidth(0.4);
+  doc.line(M, y, AN - M, y);
+  y += 10;
+
+  /* ---- fecha ---- */
+  doc.setFontSize(10);
+  doc.text('Iguala de la Independencia, Guerrero, a ' +
+           fechaLarga(document.getElementById('entFecha').value) + '.', AN - M, y, { align: 'right' });
+  y += 12;
+
+  /* ---- destinatario ---- */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text('A QUIEN CORRESPONDA', M, y);
+  y += 6;
+  doc.setFontSize(11);
+  doc.text(largo.toUpperCase(), M, y);
+  y += 5.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text('P R E S E N T E', M, y);
+  y += 10;
+
+  /* ---- cuerpo ---- */
+  doc.setFontSize(10.5);
+  var cuerpo = 'Por medio de la presente, FOTO ESTUDIO GRACIELA hace constar la entrega a ' +
+    largo.toUpperCase() + ' de ' + cuantas + ' (' + apocope(enLetras(cuantas)) + ') credenciales ' +
+    'escolares en material PVC';
+  if (precio) {
+    cuerpo += ', con un costo unitario de ' + pesos(precio) + ' (' + pesosEnLetras(precio) + '), ' +
+      'lo que asciende a un total de ' + pesos(cuantas * precio) + ' (' +
+      pesosEnLetras(cuantas * precio) + ')';
+  }
+  cuerpo += '. A continuación se detalla la relación de alumnos, agrupada por grado, ' +
+            'para su cotejo y conformidad.';
+
+  var lineas = doc.splitTextToSize(cuerpo, ancho);
+  doc.text(lineas, M, y, { align: 'justify', maxWidth: ancho });
+  y += lineas.length * 5.2 + 4;
+
+  var nota = document.getElementById('entNota').value.trim();
+  if (nota) {
+    var ln = doc.splitTextToSize(nota, ancho);
+    doc.text(ln, M, y, { align: 'justify', maxWidth: ancho });
+    y += ln.length * 5.2 + 6;
+  }
+
+  /* ---- resumen ---- */
+  if (precio) {
+    var altoCaja = 22;
+    cabeSitio(altoCaja + 6);
+    doc.setFillColor(246, 239, 229);
+    doc.setDrawColor(210, 196, 176);
+    doc.roundedRect(M, y, ancho, altoCaja, 2, 2, 'FD');
+    var col = ancho / 3;
+    var etiquetas = ['Credenciales', 'Precio unitario', 'Total a pagar'];
+    var valores = [String(cuantas), pesos(precio), pesos(cuantas * precio)];
+    for (var i = 0; i < 3; i++) {
+      var cx = M + col * i + col / 2;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+      doc.text(etiquetas[i], cx, y + 8, { align: 'center' });
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(0);
+      doc.text(valores[i], cx, y + 16, { align: 'center' });
+    }
+    y += altoCaja + 10;
+  }
+
+  /* ---- relacion de alumnos, en dos columnas ---- */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  cabeSitio(10);
+  doc.text('RELACIÓN DE ALUMNOS', M, y);
+  y += 7;
+
+  var anchoCol = (ancho - 8) / 2;
+  var paso = 4.6;
+
+  ENT.niveles.forEach(function (n) {
+    var lista = n.alumnos.filter(function (a) { return ENT.marcados[a.id]; });
+    if (!lista.length) return;
+
+    cabeSitio(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.setFillColor(238, 230, 216);
+    doc.rect(M, y - 4.2, ancho, 6.4, 'F');
+    doc.text(n.nombre.toUpperCase(), M + 2, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(lista.length + (lista.length === 1 ? ' credencial' : ' credenciales'),
+             AN - M - 2, y, { align: 'right' });
+    y += 7;
+
+    doc.setFontSize(8.8);
+    var mitad = Math.ceil(lista.length / 2);
+    var k = 0;
+    while (k < mitad) {
+      if (y + paso > ALT - 22) {
+        nuevaPagina();
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(120);
+        doc.text(n.nombre.toUpperCase() + ' (continúa)', M, y);
+        doc.setTextColor(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.8);
+        y += 6;
+      }
+      dibujaNombre(doc, lista[k], k + 1, M, y, anchoCol);
+      if (k + mitad < lista.length) {
+        dibujaNombre(doc, lista[k + mitad], k + mitad + 1, M + anchoCol + 8, y, anchoCol);
+      }
+      y += paso;
+      k++;
+    }
+    y += 5;
+  });
+
+  /* ---- firmas ---- */
+  if (y + 62 > ALT - 22) { nuevaPagina(); y = 34; } else y += 10;
+
+  // el resumen se repite aqui: quien firma debe ver que esta firmando
+  doc.setDrawColor(190); doc.setLineWidth(0.4);
+  doc.line(M, y, AN - M, y);
+  y += 7;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+  doc.text('TOTAL ENTREGADO', M, y);
+  var resumen = cuantas + (cuantas === 1 ? ' credencial' : ' credenciales') +
+                (precio ? '   ·   ' + pesos(cuantas * precio) : '');
+  doc.text(resumen, AN - M, y, { align: 'right' });
+  y += 9;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  var cierre = doc.splitTextToSize(
+    'Se firma la presente hoja de entrega de conformidad, haciendo constar que se recibió ' +
+    'la totalidad de las credenciales aquí relacionadas.', ancho);
+  doc.text(cierre, M, y, { align: 'justify', maxWidth: ancho });
+  y += cierre.length * 5 + 30;
+
+  var anchoFirma = 68;
+  doc.setDrawColor(90); doc.setLineWidth(0.3);
+  doc.line(M + 4, y, M + 4 + anchoFirma, y);
+  doc.line(AN - M - 4 - anchoFirma, y, AN - M - 4, y);
+  y += 5;
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text('ENTREGA', M + 4 + anchoFirma / 2, y, { align: 'center' });
+  doc.text('RECIBE', AN - M - 4 - anchoFirma / 2, y, { align: 'center' });
+  y += 4.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+  doc.text('Foto Estudio Graciela', M + 4 + anchoFirma / 2, y, { align: 'center' });
+  doc.text('Nombre, cargo y firma', AN - M - 4 - anchoFirma / 2, y, { align: 'center' });
+  y += 10;
+  doc.setFontSize(8.5);
+  doc.text('Fecha de recepción: ____ / ____ / ________',
+           AN - M - 4 - anchoFirma / 2, y, { align: 'center' });
+  doc.setTextColor(0);
+
+  /* ---- pie de todas las paginas ---- */
+  var total = doc.getNumberOfPages();
+  for (var pg = 1; pg <= total; pg++) {
+    doc.setPage(pg);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
+    doc.text(largo.toUpperCase(), M, ALT - 12);
+    doc.text('Página ' + pg + ' de ' + total, AN - M, ALT - 12, { align: 'right' });
+    doc.setTextColor(0);
+  }
+
+  doc.save('Entrega - ' + largo.replace(/[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, '').trim() + ' - ' +
+           document.getElementById('entFecha').value + '.pdf');
+}
+
+/* Si el nombre no cabe en la columna, se encoge la letra hasta 6.8 pt antes
+   de recortarlo. Asi los nombres largos salen completos. */
+function dibujaNombre(doc, a, num, x, y, anchoCol) {
+  doc.setFontSize(8.8);
+  doc.setTextColor(140);
+  doc.text(String(num) + '.', x, y);
+  doc.setTextColor(0);
+
+  var hueco = anchoCol - 9;
+  var t = a.nombre;
+  var tam = 8.8;
+  while (doc.getTextWidth(t) > hueco && tam > 6.8) {
+    tam -= 0.3;
+    doc.setFontSize(tam);
+  }
+  if (doc.getTextWidth(t) > hueco) {
+    while (t.length > 4 && doc.getTextWidth(t + '…') > hueco) t = t.slice(0, -1);
+    t += '…';
+  }
+  doc.text(t, x + 8, y);
+  doc.setFontSize(8.8);
+}
 
 /* ═══════════════════════ no pisar una foto por error ═══════════════════════
 
