@@ -346,7 +346,7 @@
 <div id="app" class="oculto">
   <div class="barra">
     <div class="marca"><span class="pt"></span> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v38</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v41</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -827,6 +827,7 @@
     </label>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
       <button class="btn claro chico" id="btnClaveFotos" onclick="nuevaClaveFotos()">Crear contraseña</button>
+      <button class="btn claro chico" id="btnRepubFotos" onclick="republicarFotos()">Actualizar la página</button>
       <button class="btn claro chico" onclick="quitarClaveFotos()">Quitar acceso</button>
       <button class="btn claro chico" onclick="copiarRecado()">Copiar el recado para la escuela</button>
     </div>
@@ -1111,11 +1112,16 @@ function leeLocal(k) { try { return sessionStorage.getItem(k) || ''; } catch (e)
    tiempo se forman, y las últimas a veces regresan una página de error de
    Google en vez de la respuesta. Por eso aquí se hace fila y se reintenta.   */
 
-var FILA_API = [], enVuelo = 0, MAX_A_LA_VEZ = 2;
+var FILA_API = [], enVuelo = 0, escribiendo = 0;
+var MAX_A_LA_VEZ = 2;      // en total
+var MAX_ESCRITURAS = 1;    // Apps Script atiende de una en una: no lo saturamos
 
 // Las que solo leen se pueden repetir sin miedo.
 var REPETIBLES = { entrar: 1, escuelas: 1, nivel: 1, campos: 1, miniaturas: 1,
-                   fotoGrande: 1, escuelaFicha: 1, fichaEstado: 1, solicitudes: 1 };
+                   fotoGrande: 1, escuelaFicha: 1, fichaEstado: 1, solicitudes: 1,
+                   entrega: 1, autorizadosLista: 1 };
+
+function esEscritura(a) { return !REPETIBLES[a]; }
 
 function api(accion, datos) {
   return new Promise(function (ok, mal) {
@@ -1125,13 +1131,26 @@ function api(accion, datos) {
 }
 
 function correrFilaApi() {
+  var saltados = [];
   while (enVuelo < MAX_A_LA_VEZ && FILA_API.length) {
+    var t = FILA_API.shift();
+    // si ya hay una escritura en curso, esta se espera su turno
+    if (esEscritura(t.accion) && escribiendo >= MAX_ESCRITURAS) { saltados.push(t); continue; }
+    lanzarApi(t);
+  }
+  while (saltados.length) FILA_API.unshift(saltados.pop());
+}
+
+function lanzarApi(t) {
     (function (t) {
       enVuelo++;
+      var escribe = esEscritura(t.accion);
+      if (escribe) escribiendo++;
       pedirUnaVez(t.accion, t.datos).then(function (d) {
-        enVuelo--; t.ok(d); correrFilaApi();
+        enVuelo--; if (escribe) escribiendo--;
+        t.ok(d); correrFilaApi();
       }).catch(function (e) {
-        enVuelo--;
+        enVuelo--; if (escribe) escribiendo--;
         var vale = REPETIBLES[t.accion] && (e.reintentable || !navigator.onLine);
         if (vale && t.intento < 3) {
           t.intento++;
@@ -1141,8 +1160,7 @@ function correrFilaApi() {
         }
         correrFilaApi();
       });
-    })(FILA_API.shift());
-  }
+    })(t);
 }
 
 function pedirUnaVez(accion, datos) {
@@ -1308,7 +1326,7 @@ function salir() {
   });
 })();
 
-var API_QUE_NECESITO = 38;
+var API_QUE_NECESITO = 41;
 
 function revisarVersionApi(d) {
   if (d && d.api >= API_QUE_NECESITO) return;
@@ -1509,6 +1527,21 @@ function nuevaClaveFotos() {
     decir('Listo. Ya puedes pasarle el enlace y la contraseña a la escuela.');
   }).catch(function (e) {
     b.disabled = false; b.textContent = 'Crear contraseña';
+    fallo(e);
+  });
+}
+
+/* Sube otra vez la página de la escuela sin tocar su contraseña.
+   Hay que usarlo cuando cambia la plantilla en una versión nueva. */
+function republicarFotos() {
+  var b = document.getElementById('btnRepubFotos');
+  b.disabled = true; b.textContent = 'Subiendo…';
+  api('publicarFotos', { escuelaId: EF.id }).then(function (d) {
+    b.disabled = false; b.textContent = 'Actualizar la página';
+    document.getElementById('efFotos').value = d.url || '';
+    decir('Página actualizada. La contraseña sigue siendo la misma.');
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = 'Actualizar la página';
     fallo(e);
   });
 }
