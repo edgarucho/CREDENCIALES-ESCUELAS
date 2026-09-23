@@ -346,7 +346,7 @@
 <div id="app" class="oculto">
   <div class="barra">
     <div class="marca"><span class="pt"></span> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v37</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v38</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -806,6 +806,41 @@
     </label>
     <div id="efNiveles" class="pie" style="margin-top:14px"></div>
 
+    <hr style="border:none;border-top:1px solid var(--line);margin:22px 0 16px">
+
+    <h3 style="font-size:16px;margin:0 0 4px">Página para que la escuela suba fotos</h3>
+    <p class="pie" style="margin:0 0 14px">Entran con su contraseña, ven sus grupos y solo pueden
+       subir la foto de cada alumno y dar de alta alumnos nuevos. No ven fichas ni datos de
+       emergencia, y no pueden borrar nada.</p>
+
+    <label class="campo"><span>Enlace de la página</span>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="efFotos" readonly>
+        <button class="btn claro" onclick="copiar(document.getElementById('efFotos').value)">Copiar</button>
+      </div>
+    </label>
+    <label class="campo"><span>Contraseña de esa página</span>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="efClaveFotos" readonly placeholder="Todavía no está habilitada">
+        <button class="btn claro" onclick="copiar(document.getElementById('efClaveFotos').value)">Copiar</button>
+      </div>
+    </label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <button class="btn claro chico" id="btnClaveFotos" onclick="nuevaClaveFotos()">Crear contraseña</button>
+      <button class="btn claro chico" onclick="quitarClaveFotos()">Quitar acceso</button>
+      <button class="btn claro chico" onclick="copiarRecado()">Copiar el recado para la escuela</button>
+    </div>
+
+    <label class="campo" style="margin-top:14px"><span>Fotos de personas autorizadas</span>
+      <select id="efAutorizados" onchange="guardarAutorizados()">
+        <option value="no">No se piden</option>
+        <option value="ficha">Sí, solo para la ficha con QR</option>
+        <option value="imprimir">Sí, y además las quiero para imprimir</option>
+      </select>
+    </label>
+    <p class="pie" style="margin:0 0 10px" id="efAutNota"></p>
+    <button class="btn claro chico" id="btnAutXls" onclick="exportarAutorizados()">Exportar autorizados a Excel</button>
+
     <div class="pie-botones">
       <button class="btn claro" onclick="cerrar('velEscuelaFicha')">Cerrar</button>
     </div>
@@ -939,6 +974,7 @@
         <option value="telefono">Teléfono</option>
         <option value="lista">Lista de opciones</option>
         <option value="casilla">Sí o no</option>
+        <option value="foto">Foto de persona autorizada</option>
       </select>
       <button class="btn claro" onclick="agregarCampo()">Agregar</button>
     </div>
@@ -1272,7 +1308,7 @@ function salir() {
   });
 })();
 
-var API_QUE_NECESITO = 37;
+var API_QUE_NECESITO = 38;
 
 function revisarVersionApi(d) {
   if (d && d.api >= API_QUE_NECESITO) return;
@@ -1429,8 +1465,106 @@ function cargarEscuelaFicha() {
     document.getElementById('efNiveles').textContent = sin.length
       ? 'Todavía sin ficha: ' + sin.map(function (n) { return n.nombre; }).join(', ')
       : 'Todos los niveles ya tienen su ficha.';
+
+    document.getElementById('efFotos').value = d.fotos || '';
+    document.getElementById('efClaveFotos').value = d.claveFotos || '';
+    document.getElementById('btnClaveFotos').textContent =
+      d.claveFotos ? 'Generar otra contraseña' : 'Crear contraseña';
+    document.getElementById('efAutorizados').value = d.autorizados || 'no';
+    pintarNotaAutorizados();
   }).catch(function (e) {
     document.getElementById('efEstado').textContent = 'No pude cargarlo: ' + (e.message || e);
+    fallo(e);
+  });
+}
+
+function pintarNotaAutorizados() {
+  var v = document.getElementById('efAutorizados').value;
+  document.getElementById('efAutNota').textContent =
+    v === 'no' ? 'El formulario de los papás no pide fotos de personas autorizadas.'
+    : v === 'ficha' ? 'El papá podrá tomarle foto a cada persona autorizada desde el formulario. Sale en la ficha del QR.'
+    : 'Además de salir en la ficha, las fotos se guardan en Drive y puedes exportarlas para imprimirles su credencial.';
+}
+
+function guardarAutorizados() {
+  pintarNotaAutorizados();
+  api('autorizados', { escuelaId: EF.id, modo: document.getElementById('efAutorizados').value })
+    .then(function () { decir('Guardado'); }).catch(fallo);
+}
+
+function nuevaClaveFotos() {
+  var hay = document.getElementById('efClaveFotos').value;
+  if (hay && !confirm('Se va a generar una contraseña nueva. La de antes deja de servir ' +
+                      'y hay que avisarle a la escuela. ¿Le seguimos?')) return;
+
+  var b = document.getElementById('btnClaveFotos');
+  b.disabled = true; b.textContent = 'Creando…';
+  api('claveFotos', { escuelaId: EF.id }).then(function (d) {
+    document.getElementById('efClaveFotos').value = d.clave;
+    return api('publicarFotos', { escuelaId: EF.id });
+  }).then(function (d) {
+    document.getElementById('efFotos').value = d.url || '';
+    b.disabled = false;
+    cargarEscuelaFicha();
+    decir('Listo. Ya puedes pasarle el enlace y la contraseña a la escuela.');
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = 'Crear contraseña';
+    fallo(e);
+  });
+}
+
+function quitarClaveFotos() {
+  if (!confirm('La escuela dejará de poder entrar a subir fotos. ¿Seguro?')) return;
+  api('claveFotos', { escuelaId: EF.id, quitar: true }).then(function () {
+    decir('Acceso quitado');
+    cargarEscuelaFicha();
+  }).catch(fallo);
+}
+
+function copiarRecado() {
+  var url = document.getElementById('efFotos').value;
+  var clave = document.getElementById('efClaveFotos').value;
+  if (!url || !clave) { decir('Primero crea la contraseña', true); return; }
+  var nombre = EF.datos ? EF.datos.escuela : '';
+  copiar(
+    'Buen día. Les comparto la página para subir las fotos de sus alumnos.\n\n' +
+    'Enlace: ' + url + '\n' +
+    'Contraseña: ' + clave + '\n\n' +
+    'Al entrar van a ver las instrucciones de cómo debe tomarse cada foto. ' +
+    'Por favor léanlas antes de empezar: fondo blanco, de frente y con buena luz.\n\n' +
+    'Cualquier duda quedamos a sus órdenes.\nFoto Estudio Graciela'
+  );
+}
+
+/* Una fila por persona autorizada con foto, para imprimirles su credencial.
+   Las fotos quedan en Drive, en la carpeta "autorizados" de cada nivel. */
+function exportarAutorizados() {
+  var b = document.getElementById('btnAutXls');
+  b.disabled = true; b.textContent = 'Armando…';
+
+  api('autorizadosLista', { escuelaId: EF.id }).then(function (d) {
+    b.disabled = false; b.textContent = 'Exportar autorizados a Excel';
+    if (!d.filas.length) {
+      decir('Todavía no hay fotos de personas autorizadas', true);
+      return;
+    }
+    var cab = ['NIVEL', 'ALUMNO', 'GRADO', 'GRUPO', 'PERSONA', 'FOTO'].concat(d.etiquetas);
+    var datos = [cab].concat(d.filas.map(function (f) {
+      return [f.nivel, f.alumno, f.grado, f.grupo, f.persona, f.foto]
+        .concat(d.claves.map(function (k) {
+          var v = f.datos[k];
+          return v === true ? 'Si' : v === false ? 'No' : String(v == null ? '' : v);
+        }));
+    }));
+
+    var hoja = XLSX.utils.aoa_to_sheet(datos);
+    var libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Autorizados');
+    XLSX.writeFile(libro, d.escuela + ' - AUTORIZADOS.xlsx');
+    decir(d.filas.length + ' personas autorizadas. Las fotos están en Drive, en la carpeta ' +
+          '"autorizados" de cada nivel.');
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = 'Exportar autorizados a Excel';
     fallo(e);
   });
 }
@@ -4876,9 +5010,9 @@ function pintarCampos() {
         '<button class="ojo ' + (c.publico ? 'abierto' : 'cerrado') + '" onclick="alternarOjo(' + i + ')">' +
           (c.publico ? 'Se ve al escanear' : 'Pide autorización') + '</button>' +
         '<select onchange="cambiarTipo(' + i + ',this.value)">' +
-          ['texto', 'parrafo', 'telefono', 'lista', 'casilla'].map(function (t) {
+          ['texto', 'parrafo', 'telefono', 'lista', 'casilla', 'foto'].map(function (t) {
             var nombres = { texto: 'Texto corto', parrafo: 'Texto largo', telefono: 'Teléfono',
-                            lista: 'Lista', casilla: 'Sí o no' };
+                            lista: 'Lista', casilla: 'Sí o no', foto: 'Foto' };
             return '<option value="' + t + '"' + (c.tipo === t ? ' selected' : '') + '>' + nombres[t] + '</option>';
           }).join('') +
         '</select>' +
