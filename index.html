@@ -27,6 +27,8 @@
   .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11.5px;
         font-variant-numeric:tabular-nums}
   .oculto{display:none !important}
+  .logo-entrada{width:min(230px,62vw);height:auto;display:block;margin:0 auto 20px}
+  .logo-barra{height:24px;width:auto;display:block;margin-right:2px}
   button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   button{cursor:pointer}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -288,6 +290,18 @@
 .pestana input[type=text]{flex:1;min-width:120px}
 .pestana .cuenta{font-size:12px;color:var(--muted);white-space:nowrap}
 .pestana.vacia{opacity:.45}
+.precio-fila{display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.precio-fila:last-child{border-bottom:none}
+.precio-fila input[type=text]{flex:1;min-width:0}
+.precio-fila .monto{width:110px;flex:none;text-align:right}
+.precio-fila .quitar{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;
+  padding:4px 6px}
+.precio-fila .quitar:hover{color:var(--rojo)}
+.cot-fila{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.cot-fila:last-child{border-bottom:none}
+.cot-fila .nom{flex:1;min-width:0;font-size:14px}
+.cot-fila .nom small{display:block;color:var(--muted);font-size:12px}
+.cot-fila .imp{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
 .ent-nivel{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
 .ent-nivel > header{display:flex;gap:10px;align-items:center;padding:9px 12px;
   background:var(--paper-2);cursor:pointer;user-select:none}
@@ -333,7 +347,8 @@
 <!-- ══════════════════════════════════════════════════════════════ ENTRAR -->
 <div class="puerta" id="puerta">
   <div class="llave">
-    <div class="lente"></div>
+    <img src="logo.png" alt="Foto Estudio Graciela" class="logo-entrada"
+         onerror="this.style.display='none'">
     <h1>ALUM-NA</h1>
     <p>Credenciales escolares · Foto Estudio Graciela</p>
     <div class="puntos" id="puntos"><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -345,8 +360,9 @@
 <!-- ═════════════════════════════════════════════════════════════════ APP -->
 <div id="app" class="oculto">
   <div class="barra">
-    <div class="marca"><span class="pt"></span> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v43</span></div>
+    <div class="marca"><img src="logo.png" alt="" class="logo-barra"
+         onerror="this.style.display='none'"> ALUM-NA
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v47</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -363,6 +379,8 @@
           <p>Cada escuela guarda sus niveles, sus fotos y su Excel en Drive.</p>
         </div>
         <div class="crece"></div>
+        <button class="btn claro" onclick="abrirPrecios()">Precios</button>
+        <button class="btn claro" onclick="abrirCotiza()">Crear cotización</button>
         <button class="btn claro" onclick="abrirEntrega()">Hoja de entrega</button>
         <button class="btn fuego" onclick="pedirEscuela()">Nueva escuela</button>
       </div>
@@ -391,6 +409,7 @@
           <button class="btn claro chico" onclick="agregarFilaVacia()">Agregar alumno</button>
           <button class="btn claro chico" onclick="abrirImportarExistente()">Importar Excel</button>
           <button class="btn claro chico oculto" id="btnHuecos" onclick="rellenarFichas()"></button>
+          <button class="btn claro chico" id="btnAlDia" onclick="alDia()">Nombres al día</button>
           <div class="crece"></div>
           <span class="mono" id="conteo"></span>
           <button class="btn chico" onclick="exportar()">Exportar a Drive</button>
@@ -849,6 +868,68 @@
 </div>
 
 <input type="file" id="archivoLogoEsc" accept="image/png,image/jpeg" style="display:none">
+
+<div class="velo" id="velPrecios">
+  <div class="cuadro ancho">
+    <h2>Precios</h2>
+    <p class="entrada">Es la lista que usa la cotización. Se guarda en el servidor, así que
+       vale igual desde cualquier aparato.</p>
+    <div id="listaPrecios"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px">
+      <input type="text" id="conceptoNuevo" placeholder="Concepto nuevo" style="max-width:280px">
+      <input type="text" id="precioNuevo" inputmode="decimal" placeholder="0.00" style="max-width:110px">
+      <button class="btn claro" onclick="agregarConcepto()">Agregar</button>
+    </div>
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velPrecios')">Cerrar</button>
+      <button class="btn claro" onclick="restaurarPrecios()">Volver a los de siempre</button>
+      <button class="btn fuego" id="btnGuardarPrecios" onclick="guardarPrecios()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="velCotiza">
+  <div class="cuadro ancho">
+    <h2>Crear cotización</h2>
+    <p class="entrada">Sale un PDF con los precios por alumno y la explicación de la ficha
+       médica con QR.</p>
+
+    <label class="campo"><span>Para quién es (como debe salir en el documento)</span>
+      <input type="text" id="cotCliente" placeholder="INSTITUTO VERSALLES" list="listaEsc">
+      <datalist id="listaEsc"></datalist></label>
+
+    <div class="linea" style="display:flex;gap:12px;flex-wrap:wrap">
+      <label class="campo" style="flex:1;min-width:150px"><span>Fecha</span>
+        <input type="date" id="cotFecha"></label>
+      <label class="campo" style="flex:1;min-width:150px"><span>Vigencia</span>
+        <select id="cotVigencia">
+          <option value="15">15 días</option>
+          <option value="30" selected>30 días</option>
+          <option value="60">60 días</option>
+          <option value="0">Sin vigencia</option>
+        </select></label>
+    </div>
+
+    <span class="rotulo" style="font-size:13px;color:var(--muted);display:block;margin-bottom:8px">
+      Qué se cotiza</span>
+    <div id="cotConceptos"></div>
+
+    <label class="campo" style="margin-top:12px"><span>Nota extra (opcional)</span>
+      <input type="text" id="cotNota" placeholder="Incluye entrega en el plantel, diseño sin costo…"></label>
+
+    <div style="margin-top:6px">
+      <label class="marca"><input type="checkbox" id="cotExplicar" checked>
+        Incluir la explicación de la ficha médica QR</label>
+    </div>
+    <p class="pie" style="margin:8px 0 0">La cotización sale solo con el precio por alumno.
+       El total se calcula en la hoja de entrega, cuando ya se sabe cuántas credenciales son.</p>
+
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velCotiza')">Cerrar</button>
+      <button class="btn fuego" id="btnCotizaPdf" onclick="generarCotiza()">Crear el PDF</button>
+    </div>
+  </div>
+</div>
 
 <div class="velo" id="velEntrega">
   <div class="cuadro ancho">
@@ -1326,7 +1407,7 @@ function salir() {
   });
 })();
 
-var API_QUE_NECESITO = 43;
+var API_QUE_NECESITO = 47;
 
 function revisarVersionApi(d) {
   if (d && d.api >= API_QUE_NECESITO) return;
@@ -2088,6 +2169,8 @@ function pintarTabla() {
     });
     html += '<td><div class="acciones">' +
       '<button class="icono" title="Tomar foto" onclick="irAFoto(\'' + a._id + '\')">◉</button>' +
+      '<button class="icono" title="Corregiste el nombre: pon al día el archivo de su foto" ' +
+        'onclick="alDia(\'' + a._id + '\')">↻</button>' +
       '<button class="icono rojo" title="Eliminar" onclick="eliminarAlumno(\'' + a._id + '\')">✕</button>' +
       '</div></td></tr>';
   });
@@ -3173,9 +3256,350 @@ function verSalida() {
 
 
 
+
+/* ═══════════════════════════════ precios ═══════════════════════════════ */
+
+var PRECIOS = [];
+
+function abrirPrecios() {
+  if (necesitaRed('ver los precios')) return;
+  api('precios', {}).then(function (d) {
+    PRECIOS = d.precios;
+    pintarPrecios();
+    abrir('velPrecios');
+  }).catch(fallo);
+}
+
+function pintarPrecios() {
+  document.getElementById('listaPrecios').innerHTML = PRECIOS.map(function (c, i) {
+    return '<div class="precio-fila">' +
+      '<input type="text" value="' + esc(c.nombre) + '" oninput="PRECIOS[' + i + '].nombre=this.value">' +
+      '<input type="text" class="monto" inputmode="decimal" value="' + c.precio +
+        '" oninput="PRECIOS[' + i + '].precio=this.value">' +
+      '<button class="quitar" title="Quitar" onclick="quitarConcepto(' + i + ')">✕</button>' +
+      '</div>';
+  }).join('') || '<p class="vacio">No hay conceptos.</p>';
+}
+
+function quitarConcepto(i) { PRECIOS.splice(i, 1); pintarPrecios(); }
+
+function agregarConcepto() {
+  var n = document.getElementById('conceptoNuevo');
+  var p = document.getElementById('precioNuevo');
+  var nombre = n.value.trim();
+  if (!nombre) { decir('Escribe el concepto', true); return; }
+  PRECIOS.push({ id: '', nombre: nombre, precio: Number(String(p.value).replace(/[^0-9.]/g, '')) || 0 });
+  n.value = ''; p.value = '';
+  pintarPrecios();
+  n.focus();
+}
+
+function restaurarPrecios() {
+  if (!confirm('¿Volver a la lista de siempre? Pierdes los cambios de esta ventana.')) return;
+  api('precios', { restaurar: true }).then(function (d) {
+    PRECIOS = d.precios;
+    pintarPrecios();
+    decir('Ahí están. Dale Guardar para dejarlos.');
+  }).catch(fallo);
+}
+
+function guardarPrecios() {
+  var b = document.getElementById('btnGuardarPrecios');
+  b.disabled = true; b.textContent = 'Guardando…';
+  api('guardarPrecios', { precios: PRECIOS }).then(function (d) {
+    PRECIOS = d.precios;
+    b.disabled = false; b.textContent = 'Guardar';
+    cerrar('velPrecios');
+    decir('Precios guardados');
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = 'Guardar';
+    fallo(e);
+  });
+}
+
+/* ═══════════════════════════════ cotización ═══════════════════════════════ */
+
+var COT = { marcados: {} };
+
+function abrirCotiza() {
+  if (necesitaRed('armar la cotización')) return;
+
+  document.getElementById('listaEsc').innerHTML = S.escuelas.map(function (e) {
+    return '<option value="' + esc(e.nombre) + '">';
+  }).join('');
+  document.getElementById('cotFecha').value = hoyISO();
+  document.getElementById('cotNota').value = '';
+  document.getElementById('cotCliente').value = '';
+
+  api('precios', {}).then(function (d) {
+    PRECIOS = d.precios;
+    // por defecto se marca la credencial más sencilla
+    COT.marcados = {};
+    if (PRECIOS.length) COT.marcados[PRECIOS[0].id] = true;
+    pintarCotiza();
+    abrir('velCotiza');
+  }).catch(fallo);
+}
+
+function marcarConcepto(id, si) {
+  COT.marcados[id] = si;
+  pintarCotiza();
+}
+
+function pintarCotiza() {
+  document.getElementById('cotConceptos').innerHTML = PRECIOS.map(function (c) {
+    var puesto = !!COT.marcados[c.id];
+    return '<label class="cot-fila">' +
+      '<input type="checkbox"' + (puesto ? ' checked' : '') +
+        ' onchange="marcarConcepto(\'' + esc(c.id) + '\',this.checked)">' +
+      '<span class="nom">' + esc(c.nombre) + '</span>' +
+      '<span class="imp">' + pesos(Number(c.precio || 0)) + ' por alumno</span>' +
+      '</label>';
+  }).join('') || '<p class="vacio">No hay precios. Ponlos en la pestaña Precios.</p>';
+}
+
+function conceptosElegidos() {
+  return PRECIOS.filter(function (c) { return COT.marcados[c.id]; });
+}
+
+function generarCotiza() {
+  var elegidos = conceptosElegidos();
+  var cliente = document.getElementById('cotCliente').value.trim();
+
+  if (!cliente) { decir('Escribe para quién es la cotización', true); return; }
+  if (!elegidos.length) { decir('Marca al menos un concepto', true); return; }
+
+  var b = document.getElementById('btnCotizaPdf');
+  b.disabled = true; b.textContent = 'Armando…';
+
+  leerLogoEstudio().then(medirLogo).then(function (logo) {
+    try { armarPdfCotiza(cliente, elegidos, logo); decir('Cotización lista'); }
+    catch (e) { fallo(e); }
+    b.disabled = false; b.textContent = 'Crear el PDF';
+  });
+}
+
+/* Lo que explica en el documento qué es la ficha médica y por qué conviene.
+   Es el argumento de venta, así que va completo pero sin rodeos. */
+function textoFicha() {
+  return [
+    ['Qué es',
+     'Cada credencial lleva impreso un código QR propio del alumno. Al escanearlo con ' +
+     'cualquier teléfono, sin instalar nada, se abre una página con su información de ' +
+     'emergencia: tipo de sangre, alergias, padecimientos, medicamentos que toma y si está ' +
+     'autorizado su traslado a un hospital.'],
+
+    ['Quién llena los datos',
+     'El padre o tutor, desde un formulario en línea que la escuela le comparte. Antes de ' +
+     'enviarlo acepta un aviso de privacidad que le dice exactamente qué dato va a ser ' +
+     'visible al escanear y cuál queda protegido. Una ficha ya llenada no se puede ' +
+     'sobrescribir a menos que la escuela la libere.'],
+
+    ['Cómo se protegen los datos delicados',
+     'Los contactos de emergencia, los teléfonos y el número de seguro social no se muestran ' +
+     'a quien escanea. Para verlos hay que pedir autorización: la persona escribe su nombre, ' +
+     'el sistema le da un código y le avisa por correo a la escuela, que autoriza o niega ' +
+     'desde su propio panel. El permiso se otorga por alumno o por grupo, dura unas horas y ' +
+     'queda registrado quién lo pidió, para quién y cuándo. La escuela puede cortarlo en ' +
+     'cualquier momento.'],
+
+    ['Por qué conviene tenerlo',
+     'En una urgencia, quien esté con el alumno —un maestro, un paramédico, la persona que ' +
+     'lo recoge— ve en segundos lo que puede cambiar la atención que recibe: a qué es ' +
+     'alérgico, qué medicamento toma, su tipo de sangre. Sin buscar expedientes ni esperar a ' +
+     'que alguien conteste el teléfono. Y la escuela cumple resguardando los datos ' +
+     'personales, porque lo delicado nunca queda expuesto al público.'],
+
+    ['Qué incluye el servicio',
+     'La página de cada alumno, el formulario para los padres, el panel de la escuela para ' +
+     'autorizar accesos, y la impresión del QR en la credencial. Los datos se pueden ' +
+     'actualizar durante todo el ciclo escolar sin volver a imprimir la credencial.']
+  ];
+}
+
+function armarPdfCotiza(cliente, elegidos, logo) {
+  var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'letter' });
+  var AN = 215.9, ALT = 279.4;
+  var M = 20, ancho = AN - M * 2;
+  var y = 0;
+
+  function nuevaPagina() { doc.addPage(); y = 20; }
+  function cabeSitio(alto) { if (y + alto > ALT - 22) { nuevaPagina(); return false; } return true; }
+  function parrafo(txt, tam, alto) {
+    doc.setFontSize(tam || 10.5);
+    var ls = doc.splitTextToSize(txt, ancho);
+    if (y + ls.length * (alto || 5) > ALT - 22) nuevaPagina();
+    doc.text(ls, M, y, { align: 'justify', maxWidth: ancho });
+    y += ls.length * (alto || 5);
+  }
+
+  /* ---- membrete ---- */
+  y = 16;
+  if (logo) {
+    try {
+      var f = Math.min(88 / logo.w, 40 / logo.h);
+      doc.addImage(logo.url, 'PNG', (AN - logo.w * f) / 2, y, logo.w * f, logo.h * f, undefined, 'FAST');
+      y += logo.h * f + 5;
+    } catch (e) { y += 2; }
+  } else {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text(ESTUDIO.nombre, AN / 2, y, { align: 'center' });
+    y += 5.5;
+  }
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(110);
+  membrete().forEach(function (l) { doc.text(l, AN / 2, y, { align: 'center' }); y += 4.2; });
+  doc.setTextColor(0);
+  y += 1;
+  doc.setDrawColor(190); doc.setLineWidth(0.4);
+  doc.line(M, y, AN - M, y);
+  y += 10;
+
+  /* ---- encabezado ---- */
+  var fecha = document.getElementById('cotFecha').value;
+  doc.setFontSize(10);
+  doc.text(ESTUDIO.ciudad.split('·')[0].trim() + ', a ' + fechaLarga(fecha) + '.',
+           AN - M, y, { align: 'right' });
+  y += 13;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.text('COTIZACIÓN', M, y);
+  y += 10;
+
+  doc.setFontSize(12);
+  doc.text('A QUIEN CORRESPONDA', M, y);
+  y += 6;
+  doc.setFontSize(11);
+  doc.text(cliente.toUpperCase(), M, y);
+  y += 5.5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text('P R E S E N T E', M, y);
+  y += 10;
+
+  parrafo('Por medio de la presente le hacemos llegar la cotización del servicio de ' +
+    'credencialización escolar, conforme a los siguientes precios.');
+  y += 5;
+
+  /* ---- tabla ---- */
+  cabeSitio(11 * elegidos.length + 34);
+
+  doc.setFillColor(238, 230, 216);
+  doc.rect(M, y - 5, ancho, 7.5, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('CONCEPTO', M + 2, y);
+  doc.text('PRECIO POR ALUMNO', M + ancho - 2, y, { align: 'right' });
+  y += 9;
+
+  elegidos.forEach(function (c) {
+    if (y + 11 > ALT - 30) nuevaPagina();
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+    var nom = doc.splitTextToSize(c.nombre, ancho - 46);
+    doc.text(nom[0], M + 2, y);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text(pesos(Number(c.precio || 0)), M + ancho - 2, y, { align: 'right' });
+    y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120);
+    doc.text('(' + pesosEnLetras(Number(c.precio || 0)) + ')', M + 2, y);
+    doc.setTextColor(0);
+    y += 3.5;
+    doc.setDrawColor(224); doc.setLineWidth(0.2);
+    doc.line(M, y, AN - M, y);
+    y += 6;
+  });
+
+  y += 1;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  parrafo('Los precios son por alumno y no incluyen IVA. El importe total se determina por el ' +
+          'número de credenciales que se entreguen, y se detalla en la hoja de entrega que ' +
+          'acompaña al material.', 9.5, 4.7);
+  y += 3;
+
+  var nota = document.getElementById('cotNota').value.trim();
+  if (nota) { parrafo(nota, 10, 5); y += 3; }
+
+  /* ---- la ficha medica, si va ---- */
+  if (document.getElementById('cotExplicar').checked) {
+    if (y + 40 > ALT - 22) nuevaPagina(); else y += 4;
+
+    doc.setDrawColor(190); doc.setLineWidth(0.4);
+    doc.line(M, y, AN - M, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('LA FICHA MÉDICA CON QR', M, y);
+    y += 7;
+
+    textoFicha().forEach(function (par) {
+      // el titulo se va a la hoja siguiente si no caben con el sus dos
+      // primeras lineas: nunca se queda huerfano al pie
+      doc.setFontSize(10);
+      var lineas = doc.splitTextToSize(par[1], ancho);
+      var minimo = 5.2 + Math.min(2, lineas.length) * 4.9;
+      if (y + minimo > ALT - 24) nuevaPagina();
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+      doc.text(par[0], M, y);
+      y += 5.2;
+      doc.setFont('helvetica', 'normal');
+      parrafo(par[1], 10, 4.9);
+      y += 4;
+    });
+  }
+
+  /* ---- vigencia y firma ---- */
+  var dias = Number(document.getElementById('cotVigencia').value) || 0;
+  if (y + 44 > ALT - 22) nuevaPagina(); else y += 6;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  if (dias) {
+    parrafo('Esta cotización tiene una vigencia de ' + dias + ' días naturales a partir de la ' +
+            'fecha indicada. Quedamos a sus órdenes para cualquier aclaración.', 9.5, 4.7);
+  } else {
+    parrafo('Quedamos a sus órdenes para cualquier aclaración.', 9.5, 4.7);
+  }
+  y += 22;
+
+  var anchoFirma = 78;
+  doc.setDrawColor(90); doc.setLineWidth(0.3);
+  doc.line(AN / 2 - anchoFirma / 2, y, AN / 2 + anchoFirma / 2, y);
+  y += 5;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(ESTUDIO.quien, AN / 2, y, { align: 'center' });
+  y += 4.6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+  doc.text(ESTUDIO.nombre, AN / 2, y, { align: 'center' });
+  y += 4.2;
+  doc.text(ESTUDIO.tel, AN / 2, y, { align: 'center' });
+  doc.setTextColor(0);
+
+  /* ---- pie ---- */
+  var paginas = doc.getNumberOfPages();
+  for (var pg = 1; pg <= paginas; pg++) {
+    doc.setPage(pg);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
+    doc.text('Cotización · ' + cliente.toUpperCase(), M, ALT - 12);
+    doc.text('Página ' + pg + ' de ' + paginas, AN - M, ALT - 12, { align: 'right' });
+    doc.setTextColor(0);
+  }
+
+  doc.save('Cotización - ' + cliente.replace(/[^0-9A-Za-zÁÉÍÓÚÑáéíóúñ ]/g, '').trim() +
+           ' - ' + fecha + '.pdf');
+}
+
 /* ═════════════════════════════════════════════════════ hoja de entrega ═══ */
 
 var ENT = { escuelaId: '', niveles: [], marcados: {}, logo: null };
+
+/* Los datos que salen en todo lo que se imprime. */
+var ESTUDIO = {
+  nombre: 'FOTO ESTUDIO GRACIELA',
+  calle: 'Emiliano Zapata 13-B, Col. Centro',
+  ciudad: 'Iguala de la Independencia, Guerrero · C.P. 40000',
+  tel: 'Tel. 733 169 0523',
+  quien: 'Edgar Núñez Vázquez'
+};
+
+function membrete() {
+  return [ESTUDIO.calle + ' · ' + ESTUDIO.ciudad, ESTUDIO.tel];
+}
 
 function abrirEntrega() {
   if (necesitaRed('traer los alumnos')) return;
@@ -3360,6 +3784,26 @@ function leerLogoEstudio() {
       r.onsuccess = function () { ENT.logo = r.result || null; ok(ENT.logo); };
       r.onerror = function () { ok(null); };
     });
+  }).catch(function () { return null; })
+    .then(function (guardado) { return guardado || logoDeCasa(); });
+}
+
+/* El logo del estudio viene con la app. Solo hace falta subir otro si se
+   quiere cambiar. Se convierte a datos para que el PDF lo pueda meter. */
+var LOGO_CASA = null;
+
+function logoDeCasa() {
+  if (LOGO_CASA) return Promise.resolve(LOGO_CASA);
+  return fetch('logo.png').then(function (r) {
+    if (!r.ok) throw new Error('sin logo');
+    return r.blob();
+  }).then(function (b) {
+    return new Promise(function (ok) {
+      var lector = new FileReader();
+      lector.onload = function (e) { LOGO_CASA = e.target.result; ok(LOGO_CASA); };
+      lector.onerror = function () { ok(null); };
+      lector.readAsDataURL(b);
+    });
   }).catch(function () { return null; });
 }
 
@@ -3431,21 +3875,26 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
   y = 16;
   if (logo) {
     try {
-      var MAXAN = 78, MAXAL = 26;                 // el logo cabe dentro de esto
+      var MAXAN = 88, MAXAL = 40;                 // el logo cabe dentro de esto
       var f = Math.min(MAXAN / logo.w, MAXAL / logo.h);
       var an = logo.w * f, al = logo.h * f;
       doc.addImage(logo.url, 'PNG', (AN - an) / 2, y, an, al, undefined, 'FAST');
       y += al + 5;
     } catch (e) { y += 2; }
   }
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(logo ? 12 : 15);
-  doc.text('FOTO ESTUDIO GRACIELA', AN / 2, y, { align: 'center' });
-  y += logo ? 4.5 : 5.5;
+  if (!logo) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text('FOTO ESTUDIO GRACIELA', AN / 2, y, { align: 'center' });
+    y += 5.5;
+  }
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
   doc.setTextColor(110);
-  doc.text('Credenciales escolares · Iguala de la Independencia, Guerrero', AN / 2, y, { align: 'center' });
+  membrete().forEach(function (linea) {
+    doc.text(linea, AN / 2, y, { align: 'center' });
+    y += 4.2;
+  });
   doc.setTextColor(0);
-  y += 5;
+  y += 1;
   doc.setDrawColor(190); doc.setLineWidth(0.4);
   doc.line(M, y, AN - M, y);
   y += 10;
@@ -3586,7 +4035,7 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
   doc.text('RECIBE', AN - M - 4 - anchoFirma / 2, y, { align: 'center' });
   y += 4.5;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
-  doc.text('Foto Estudio Graciela', M + 4 + anchoFirma / 2, y, { align: 'center' });
+  doc.text(ESTUDIO.quien, M + 4 + anchoFirma / 2, y, { align: 'center' });
   doc.text('Nombre, cargo y firma', AN - M - 4 - anchoFirma / 2, y, { align: 'center' });
   y += 10;
   doc.setFontSize(8.5);
@@ -4745,6 +5194,44 @@ document.getElementById('archivoMarca').addEventListener('change', function (ev)
 
 
 /* Cuenta los alumnos que se quedaron sin enlace de ficha y ofrece rellenarlos. */
+/* Si se corrigió el nombre de un alumno, su foto en Drive se queda con el
+   nombre viejo. Esto los vuelve a emparejar. El enlace de la ficha NO se toca:
+   el QR que ya se imprimió sigue funcionando igual. */
+function alDia(alumnoId) {
+  if (necesitaRed('renombrar los archivos')) return;
+
+  var b = document.getElementById('btnAlDia');
+  var texto = b.textContent;
+  if (!alumnoId) { b.disabled = true; b.textContent = 'Revisando…'; }
+  else decir('Revisando…');
+
+  api('nombresAlDia', { nivelId: S.nivel.id, alumnoId: alumnoId || '' }).then(function (d) {
+    b.disabled = false; b.textContent = texto;
+
+    if (!d.cambios.length) {
+      decir(alumnoId ? 'Ese alumno ya estaba al día'
+                     : 'Todos los archivos ya cuadran con los nombres');
+      return;
+    }
+
+    // se refleja en la tabla sin recargar
+    var fi = idxFoto(), fr = idxFirma();
+    d.cambios.forEach(function (c) {
+      var col = c.tipo === 'firma' ? fr : fi;
+      if (col < 0) return;
+      S.alumnos.forEach(function (a) { if (a.v[col] === c.antes) a.v[col] = c.ahora; });
+    });
+    pintarTabla();
+
+    decir(d.cambios.length + ' archivo' + (d.cambios.length === 1 ? '' : 's') +
+          ' renombrado' + (d.cambios.length === 1 ? '' : 's') +
+          '. Vuelve a exportar el Excel.');
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = texto;
+    fallo(e);
+  });
+}
+
 function revisarFichasFaltantes() {
   var b = document.getElementById('btnHuecos');
   var ci = S.nivel ? S.nivel.columnas.indexOf('FICHA') : -1;
