@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v47</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v48</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -919,7 +919,7 @@
 
     <div style="margin-top:6px">
       <label class="marca"><input type="checkbox" id="cotExplicar" checked>
-        Incluir la explicación de la ficha médica QR</label>
+        Incluir la explicación de la ficha médica con QR</label>
     </div>
     <p class="pie" style="margin:8px 0 0">La cotización sale solo con el precio por alumno.
        El total se calcula en la hoja de entrega, cuando ya se sabe cuántas credenciales son.</p>
@@ -3407,12 +3407,12 @@ function textoFicha() {
      'En una urgencia, quien esté con el alumno —un maestro, un paramédico, la persona que ' +
      'lo recoge— ve en segundos lo que puede cambiar la atención que recibe: a qué es ' +
      'alérgico, qué medicamento toma, su tipo de sangre. Sin buscar expedientes ni esperar a ' +
-     'que alguien conteste el teléfono. Y la escuela cumple resguardando los datos ' +
-     'personales, porque lo delicado nunca queda expuesto al público.'],
+     'que alguien conteste el teléfono. Además, la escuela cumple con el resguardo de los ' +
+     'datos personales, porque lo delicado nunca queda expuesto al público.'],
 
     ['Qué incluye el servicio',
      'La página de cada alumno, el formulario para los padres, el panel de la escuela para ' +
-     'autorizar accesos, y la impresión del QR en la credencial. Los datos se pueden ' +
+     'autorizar accesos y la impresión del QR en la credencial. Los datos se pueden ' +
      'actualizar durante todo el ciclo escolar sin volver a imprimir la credencial.']
   ];
 }
@@ -3476,7 +3476,7 @@ function armarPdfCotiza(cliente, elegidos, logo) {
   y += 10;
 
   parrafo('Por medio de la presente le hacemos llegar la cotización del servicio de ' +
-    'credencialización escolar, conforme a los siguientes precios.');
+    'elaboración de credenciales escolares, conforme a los siguientes precios.');
   y += 5;
 
   /* ---- tabla ---- */
@@ -3509,7 +3509,7 @@ function armarPdfCotiza(cliente, elegidos, logo) {
   y += 1;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
   parrafo('Los precios son por alumno y no incluyen IVA. El importe total se determina por el ' +
-          'número de credenciales que se entreguen, y se detalla en la hoja de entrega que ' +
+          'número de credenciales que se entreguen y se detalla en la hoja de entrega que ' +
           'acompaña al material.', 9.5, 4.7);
   y += 3;
 
@@ -3711,14 +3711,20 @@ function pesos(v) {
 
 /* ───────────────────────── numeros en letras ───────────────────────── */
 
-function grupoMenor(n) {
-  var UNO = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez',
-             'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho',
-             'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro',
+/* Con un sustantivo femenino el numero concuerda con el: son doscientas
+   credenciales, no doscientos, y una credencial, no un credencial. */
+function grupoMenor(n, fem) {
+  var UNO = ['', (fem ? 'una' : 'uno'), 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho',
+             'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis',
+             'diecisiete', 'dieciocho', 'diecinueve', 'veinte', (fem ? 'veintiuna' : 'veintiuno'),
+             'veintidós', 'veintitrés', 'veinticuatro',
              'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
   var DEC = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
-  var CEN = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos',
-             'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+  var CEN = fem
+    ? ['', 'ciento', 'doscientas', 'trescientas', 'cuatrocientas', 'quinientas',
+       'seiscientas', 'setecientas', 'ochocientas', 'novecientas']
+    : ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos',
+       'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
   if (!n) return '';
   if (n === 100) return 'cien';
   var c = Math.floor(n / 100), r = n % 100, t = CEN[c];
@@ -3737,14 +3743,15 @@ function apocope(t) {
   return t.replace(/veintiuno$/, 'veintiún').replace(/(^|\s)uno$/, '$1un');
 }
 
-function enLetras(n) {
+function enLetras(n, fem) {
   n = Math.floor(Math.abs(n));
   if (!n) return 'cero';
   var mill = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), resto = n % 1000;
   var p = [];
+  // "un millon" siempre va en masculino; los miles y el resto concuerdan
   if (mill) p.push(mill === 1 ? 'un millón' : apocope(grupoMenor(mill)) + ' millones');
-  if (miles) p.push(miles === 1 ? 'mil' : apocope(grupoMenor(miles)) + ' mil');
-  if (resto) p.push(grupoMenor(resto));
+  if (miles) p.push(miles === 1 ? 'mil' : (fem ? grupoMenor(miles, true) : apocope(grupoMenor(miles))) + ' mil');
+  if (resto) p.push(fem ? grupoMenor(resto, true) : grupoMenor(resto));
   return p.join(' ').replace(/\s+/g, ' ').trim();
 }
 
@@ -3918,10 +3925,13 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
 
   /* ---- cuerpo ---- */
   doc.setFontSize(10.5);
+  var una = cuantas === 1;
   var cuerpo = 'Por medio de la presente, FOTO ESTUDIO GRACIELA hace constar la entrega a ' +
-    largo.toUpperCase() + ' de ' + cuantas + ' (' + apocope(enLetras(cuantas)) + ') credenciales ' +
-    'escolares en material PVC';
-  if (precio) {
+    largo.toUpperCase() + ' de ' + cuantas + ' (' + enLetras(cuantas, true) + ') ' +
+    (una ? 'credencial escolar' : 'credenciales escolares') + ' en material PVC';
+  if (precio && una) {
+    cuerpo += ', con un costo de ' + pesos(precio) + ' (' + pesosEnLetras(precio) + ')';
+  } else if (precio) {
     cuerpo += ', con un costo unitario de ' + pesos(precio) + ' (' + pesosEnLetras(precio) + '), ' +
       'lo que asciende a un total de ' + pesos(cuantas * precio) + ' (' +
       pesosEnLetras(cuantas * precio) + ')';
@@ -4021,7 +4031,8 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
   var cierre = doc.splitTextToSize(
     'Se firma la presente hoja de entrega de conformidad, haciendo constar que se recibió ' +
-    'la totalidad de las credenciales aquí relacionadas.', ancho);
+    (una ? 'la credencial aquí relacionada.' : 'la totalidad de las credenciales aquí relacionadas.'),
+    ancho);
   doc.text(cierre, M, y, { align: 'justify', maxWidth: ancho });
   y += cierre.length * 5 + 30;
 
