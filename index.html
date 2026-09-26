@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v51</span></div>
+      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v52</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -975,8 +975,12 @@
         <input type="text" id="entNota" placeholder="Reposiciones, credenciales de docentes…"></label>
     </div>
 
+    <div id="entLogoPrueba"
+         style="display:flex;align-items:center;gap:8px;margin:10px 0 0;min-height:24px"></div>
+
     <div class="pie-botones">
       <button class="btn claro" onclick="cerrar('velEntrega')">Cerrar</button>
+      <button class="btn claro chico" onclick="verLogoDelDocumento()">Ver el logo</button>
       <button class="btn claro chico" onclick="quitarLogoSubido()">Usar el logo de la app</button>
       <button class="btn claro" onclick="document.getElementById('archivoLogoEstudio').click()">Logo del estudio</button>
       <button class="btn fuego" id="btnEntregaPdf" onclick="generarEntrega()">Crear el PDF</button>
@@ -1409,6 +1413,12 @@ function salir() {
     S.pass = '';
   });
 })();
+
+/* Numero de esta version de la pagina. Sale en la barra de arriba y tambien
+   al pie de los PDF, para saber sin dudas con que version se hizo un
+   documento. Subirlo cada vez que cambie index.html. */
+var VERSION_APP = 52;
+try { document.getElementById('selloVersion').textContent = 'v' + VERSION_APP; } catch (e) {}
 
 var API_QUE_NECESITO = 47;
 
@@ -3591,7 +3601,8 @@ function armarPdfCotiza(cliente, elegidos, logo) {
     doc.setPage(pg);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
     doc.text('Cotización · ' + cliente.toUpperCase(), M, ALT - 12);
-    doc.text('Página ' + pg + ' de ' + paginas, AN - M, ALT - 12, { align: 'right' });
+    doc.text('Página ' + pg + ' de ' + paginas + '  ·  v' + VERSION_APP,
+             AN - M, ALT - 12, { align: 'right' });
     doc.setTextColor(0);
   }
 
@@ -3787,11 +3798,16 @@ function fechaLarga(iso) {
 
 /* ───────────────────────── logo del estudio ───────────────────────── */
 
+/* La llave lleva el numero de version a proposito: cualquier logo guardado
+   por una version anterior se deja de usar. Si alguna vez se guardo uno que
+   no servia, deja de estorbar solo. */
+var LLAVE_LOGO = 'logoEstudio52';
+
 function guardarLogoEstudio(dataUrl) {
   return bdIA().then(function (db) {
     return new Promise(function (ok) {
       var t = db.transaction('modelos', 'readwrite');
-      t.objectStore('modelos').put(dataUrl, 'logoEstudio');
+      t.objectStore('modelos').put(dataUrl, LLAVE_LOGO);
       t.oncomplete = function () { ENT.logo = dataUrl; ok(); };
       t.onerror = function () { ok(); };
     });
@@ -3802,7 +3818,7 @@ function leerLogoEstudio() {
   if (ENT.logo) return Promise.resolve(ENT.logo);
   return bdIA().then(function (db) {
     return new Promise(function (ok) {
-      var r = db.transaction('modelos', 'readonly').objectStore('modelos').get('logoEstudio');
+      var r = db.transaction('modelos', 'readonly').objectStore('modelos').get(LLAVE_LOGO);
       r.onsuccess = function () { ENT.logo = r.result || null; ok(ENT.logo); };
       r.onerror = function () { ok(null); };
     });
@@ -3828,7 +3844,7 @@ function quitarLogoSubido() {
   function aviso() { decir('Listo, los documentos vuelven a usar el logo de la app.'); }
   bdIA().then(function (db) {
     var t = db.transaction('modelos', 'readwrite');
-    t.objectStore('modelos').delete('logoEstudio');
+    t.objectStore('modelos').delete(LLAVE_LOGO);
     t.oncomplete = aviso;
     t.onerror = aviso;
   }).catch(aviso);
@@ -3885,6 +3901,7 @@ function medirLogo(url) {
     return Promise.resolve({ url: LOGO_DOC, tipo: 'JPEG', w: LOGO_DOC_AN, h: LOGO_DOC_AL });
   }
   return new Promise(function (ok) {
+    var deCasa = { url: LOGO_DOC, tipo: 'JPEG', w: LOGO_DOC_AN, h: LOGO_DOC_AL };
     var im = new Image();
     im.onload = function () {
       try {
@@ -3895,6 +3912,18 @@ function medirLogo(url) {
         g.fillStyle = '#FFFFFF';
         g.fillRect(0, 0, c.width, c.height);
         g.drawImage(im, 0, 0, c.width, c.height);
+
+        /* Un logo blanco sobre fondo transparente, aplanado sobre blanco,
+           desaparece. Antes de mandarlo al PDF se revisa que de verdad tenga
+           dibujo oscuro; si no, va el de la app. */
+        var d = g.getImageData(0, 0, c.width, c.height).data;
+        var oscuros = 0, total = 0;
+        for (var i = 0; i < d.length; i += 4 * 17) {      // una muestra, no todo
+          total++;
+          if ((d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10 < 200) oscuros++;
+        }
+        if (total && oscuros / total < 0.01) { ok(deCasa); return; }
+
         var plano = c.toDataURL('image/jpeg', 0.95);
         if (plano.indexOf('data:image/jpeg') === 0) {
           ok({ url: plano, tipo: 'JPEG', w: c.width, h: c.height });
@@ -3902,12 +3931,23 @@ function medirLogo(url) {
         }
       } catch (e) { /* si el canvas no deja, va el de casa */ }
       // nunca se manda al PDF una imagen con transparencia: mejor el de casa
-      ok({ url: LOGO_DOC, tipo: 'JPEG', w: LOGO_DOC_AN, h: LOGO_DOC_AL });
+      ok(deCasa);
     };
-    im.onerror = function () {
-      ok({ url: LOGO_DOC, tipo: 'JPEG', w: LOGO_DOC_AN, h: LOGO_DOC_AL });
-    };
+    im.onerror = function () { ok(deCasa); };
     im.src = url;
+  });
+}
+
+/* Enseña, tal cual, la imagen que va a entrar al PDF. Si sale un cuadro en
+   blanco es que el logo guardado no sirve. */
+function verLogoDelDocumento() {
+  leerLogoEstudio().then(medirLogo).then(function (l) {
+    var caja = document.getElementById('entLogoPrueba');
+    if (!l) { caja.innerHTML = '<span class="pie">No hay logo.</span>'; return; }
+    caja.innerHTML = '<img src="' + l.url + '" alt="" ' +
+      'style="max-height:56px;width:auto;background:#fff;border:1px solid var(--linea, #ddd);' +
+      'border-radius:6px;padding:4px"> ' +
+      '<span class="pie">' + (l.url === LOGO_DOC ? 'Logo de la app' : 'Logo subido') + '</span>';
   });
 }
 
@@ -4108,7 +4148,8 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
     doc.setPage(pg);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
     doc.text(largo.toUpperCase(), M, ALT - 12);
-    doc.text('Página ' + pg + ' de ' + total, AN - M, ALT - 12, { align: 'right' });
+    doc.text('Página ' + pg + ' de ' + total + '  ·  v' + VERSION_APP,
+             AN - M, ALT - 12, { align: 'right' });
     doc.setTextColor(0);
   }
 
