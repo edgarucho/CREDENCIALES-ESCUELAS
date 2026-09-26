@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v52</span></div>
+      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v53</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -1417,7 +1417,7 @@ function salir() {
 /* Numero de esta version de la pagina. Sale en la barra de arriba y tambien
    al pie de los PDF, para saber sin dudas con que version se hizo un
    documento. Subirlo cada vez que cambie index.html. */
-var VERSION_APP = 52;
+var VERSION_APP = 53;
 try { document.getElementById('selloVersion').textContent = 'v' + VERSION_APP; } catch (e) {}
 
 var API_QUE_NECESITO = 47;
@@ -3571,7 +3571,7 @@ function armarPdfCotiza(cliente, elegidos, logo) {
 
   /* ---- vigencia y firma ---- */
   var dias = Number(document.getElementById('cotVigencia').value) || 0;
-  if (y + 44 > ALT - 22) nuevaPagina(); else y += 6;
+  if (y + 38 > ALT - 22) nuevaPagina(); else y += 6;
 
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
   if (dias) {
@@ -3580,19 +3580,19 @@ function armarPdfCotiza(cliente, elegidos, logo) {
   } else {
     parrafo('Quedamos a sus órdenes para cualquier aclaración.', 9.5, 4.7);
   }
-  y += 22;
+  y += 16;
 
-  var anchoFirma = 78;
-  doc.setDrawColor(90); doc.setLineWidth(0.3);
-  doc.line(AN / 2 - anchoFirma / 2, y, AN / 2 + anchoFirma / 2, y);
-  y += 5;
+  // una cotizacion no se firma: va el remitente, sin raya
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text('ATENTAMENTE', M, y);
+  y += 8;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-  doc.text(ESTUDIO.quien, AN / 2, y, { align: 'center' });
+  doc.text(ESTUDIO.quien, M, y);
   y += 4.6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
-  doc.text(ESTUDIO.nombre, AN / 2, y, { align: 'center' });
+  doc.text(ESTUDIO.nombre, M, y);
   y += 4.2;
-  doc.text(ESTUDIO.tel, AN / 2, y, { align: 'center' });
+  doc.text(ESTUDIO.tel, M, y);
   doc.setTextColor(0);
 
   /* ---- pie ---- */
@@ -3601,8 +3601,7 @@ function armarPdfCotiza(cliente, elegidos, logo) {
     doc.setPage(pg);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
     doc.text('Cotización · ' + cliente.toUpperCase(), M, ALT - 12);
-    doc.text('Página ' + pg + ' de ' + paginas + '  ·  v' + VERSION_APP,
-             AN - M, ALT - 12, { align: 'right' });
+    doc.text('Página ' + pg + ' de ' + paginas, AN - M, ALT - 12, { align: 'right' });
     doc.setTextColor(0);
   }
 
@@ -4148,8 +4147,7 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
     doc.setPage(pg);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
     doc.text(largo.toUpperCase(), M, ALT - 12);
-    doc.text('Página ' + pg + ' de ' + total + '  ·  v' + VERSION_APP,
-             AN - M, ALT - 12, { align: 'right' });
+    doc.text('Página ' + pg + ' de ' + total, AN - M, ALT - 12, { align: 'right' });
     doc.setTextColor(0);
   }
 
