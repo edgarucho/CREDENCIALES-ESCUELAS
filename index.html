@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v48</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v49</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -3438,7 +3438,7 @@ function armarPdfCotiza(cliente, elegidos, logo) {
   if (logo) {
     try {
       var f = Math.min(88 / logo.w, 40 / logo.h);
-      doc.addImage(logo.url, 'PNG', (AN - logo.w * f) / 2, y, logo.w * f, logo.h * f, undefined, 'FAST');
+      doc.addImage(logo.url, logo.tipo || 'PNG', (AN - logo.w * f) / 2, y, logo.w * f, logo.h * f, undefined, 'FAST');
       y += logo.h * f + 5;
     } catch (e) { y += 2; }
   } else {
@@ -3852,12 +3852,33 @@ function generarEntrega() {
   });
 }
 
-// Devuelve el logo con sus medidas, para que no salga deformado en el PDF.
+/* Devuelve el logo con sus medidas, para que no salga deformado en el PDF.
+
+   Ademas lo aplana sobre blanco. Un PNG transparente entra al PDF como imagen
+   con mascara, y el lector de PDF del iPad no siempre la respeta: pinta el
+   dibujo en blanco y el logo se ve como un fantasma. Aplanado va como JPEG
+   normal, sin transparencia, y se ve igual en cualquier lector. */
 function medirLogo(url) {
   if (!url) return Promise.resolve(null);
   return new Promise(function (ok) {
     var im = new Image();
-    im.onload = function () { ok({ url: url, w: im.width, h: im.height }); };
+    im.onload = function () {
+      try {
+        var c = document.createElement('canvas');
+        c.width = im.naturalWidth || im.width;
+        c.height = im.naturalHeight || im.height;
+        var g = c.getContext('2d');
+        g.fillStyle = '#FFFFFF';
+        g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(im, 0, 0, c.width, c.height);
+        var plano = c.toDataURL('image/jpeg', 0.95);
+        if (plano.indexOf('data:image/jpeg') === 0) {
+          ok({ url: plano, tipo: 'JPEG', w: c.width, h: c.height });
+          return;
+        }
+      } catch (e) { /* si el canvas no deja, va el original */ }
+      ok({ url: url, tipo: 'PNG', w: im.width, h: im.height });
+    };
     im.onerror = function () { ok(null); };
     im.src = url;
   });
@@ -3885,7 +3906,7 @@ function armarPdfEntrega(largo, precio, cuantas, logo) {
       var MAXAN = 88, MAXAL = 40;                 // el logo cabe dentro de esto
       var f = Math.min(MAXAN / logo.w, MAXAL / logo.h);
       var an = logo.w * f, al = logo.h * f;
-      doc.addImage(logo.url, 'PNG', (AN - an) / 2, y, an, al, undefined, 'FAST');
+      doc.addImage(logo.url, logo.tipo || 'PNG', (AN - an) / 2, y, an, al, undefined, 'FAST');
       y += al + 5;
     } catch (e) { y += 2; }
   }
