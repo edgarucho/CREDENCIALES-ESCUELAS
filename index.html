@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" style="color:var(--muted-osc);font-weight:400">v49</span></div>
+      <span class="mono" style="color:var(--muted-osc);font-weight:400">v50</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -894,9 +894,11 @@
     <p class="entrada">Sale un PDF con los precios por alumno y la explicación de la ficha
        médica con QR.</p>
 
-    <label class="campo"><span>Para quién es (como debe salir en el documento)</span>
-      <input type="text" id="cotCliente" placeholder="INSTITUTO VERSALLES" list="listaEsc">
-      <datalist id="listaEsc"></datalist></label>
+    <label class="campo"><span>Para quién es (escribe lo que quieras, como debe salir en el documento)</span>
+      <input type="text" id="cotCliente" placeholder="INSTITUTO VERSALLES"
+             autocomplete="off" spellcheck="false"></label>
+    <div id="cotSugerencias"
+         style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-6px 0 12px"></div>
 
     <div class="linea" style="display:flex;gap:12px;flex-wrap:wrap">
       <label class="campo" style="flex:1;min-width:150px"><span>Fecha</span>
@@ -3324,9 +3326,15 @@ var COT = { marcados: {} };
 function abrirCotiza() {
   if (necesitaRed('armar la cotización')) return;
 
-  document.getElementById('listaEsc').innerHTML = S.escuelas.map(function (e) {
-    return '<option value="' + esc(e.nombre) + '">';
-  }).join('');
+  /* El nombre se escribe libre: una cotizacion puede ir a una escuela que
+     todavia no esta dada de alta. Las que ya existen quedan de atajo. */
+  document.getElementById('cotSugerencias').innerHTML = S.escuelas.length
+    ? '<span class="pie" style="margin:0 2px 0 0">Ya dadas de alta:</span>' +
+      S.escuelas.map(function (e) {
+        return '<button type="button" class="btn claro chico" ' +
+               'onclick="ponerCliente(this.textContent)">' + esc(e.nombre) + '</button>';
+      }).join('')
+    : '';
   document.getElementById('cotFecha').value = hoyISO();
   document.getElementById('cotNota').value = '';
   document.getElementById('cotCliente').value = '';
@@ -3339,6 +3347,12 @@ function abrirCotiza() {
     pintarCotiza();
     abrir('velCotiza');
   }).catch(fallo);
+}
+
+function ponerCliente(nombre) {
+  var c = document.getElementById('cotCliente');
+  c.value = nombre;
+  c.focus();
 }
 
 function marcarConcepto(id, si) {
