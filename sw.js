@@ -4,7 +4,7 @@
    Sube el numero de abajo cada vez que cambie index.html.
    ============================================================ */
 
-var VERSION = 'alumna-v54';
+var VERSION = 'alumna-v56';
 
 var BASICOS = [
   './',
@@ -42,7 +42,10 @@ self.addEventListener('message', function (ev) {
 
 function esApi(url) {
   return url.indexOf('script.google.com') >= 0 ||
-         url.indexOf('googleusercontent.com') >= 0;
+         url.indexOf('googleusercontent.com') >= 0 ||
+         url.indexOf('supabase.co') >= 0 ||         // los datos nunca se guardan:
+         url.indexOf('/rest/v1/') >= 0 ||           // una lista vieja seria peor
+         url.indexOf('/auth/v1/') >= 0;             // que esperarse a la buena
 }
 
 self.addEventListener('fetch', function (ev) {
