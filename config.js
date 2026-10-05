@@ -23,5 +23,5 @@ const MODELO_TIPO = 'u2net';
 //    Las dos salen de Settings → API Keys. La publishable key es publica:
 //    sin cuenta no deja leer nada, de eso se encargan las reglas (RLS).
 //    Si las dejas vacias, la app trabaja como antes, contra el Apps Script.
-const SUPA_URL  = 'https://aoxeqxzflirpoecarqan.supabase.co/rest/v1/';
+const SUPA_URL  = 'https://abcdefghijk.supabase.co';
 const SUPA_ANON = 'sb_publishable_b5sCcwYrxZ-8MwOzlvc-Xw_4Z0wpsOl';
