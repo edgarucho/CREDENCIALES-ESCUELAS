@@ -18,3 +18,10 @@ const MODELO_IA = 'https://huggingface.co/tomjackson2023/rembg/resolve/main/u2ne
 //    'u2net'  para u2netp, u2net y u2net_human_seg
 //    'isnet'  para isnet-general-use
 const MODELO_TIPO = 'u2net';
+
+// 4) Supabase — donde viven ahora los datos.
+//    Las dos salen de Settings → API Keys. La publishable key es publica:
+//    sin cuenta no deja leer nada, de eso se encargan las reglas (RLS).
+//    Si las dejas vacias, la app trabaja como antes, contra el Apps Script.
+const SUPA_URL  = 'https://aoxeqxzflirpoecarqan.supabase.co/rest/v1/';
+const SUPA_ANON = 'sb_publishable_b5sCcwYrxZ-8MwOzlvc-Xw_4Z0wpsOl';
