@@ -362,10 +362,11 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v53</span></div>
+      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v54</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
+    <button class="btn claro chico oculto" id="pildoraSupa" onclick="abrirSupa()">Conectar</button>
     <button class="btn claro chico" onclick="abrirDrive()">Drive</button>
     <button class="btn claro chico" onclick="salir()">Salir</button>
   </div>
@@ -988,6 +989,30 @@
   </div>
 </div>
 
+<div class="velo" id="velSupa">
+  <div class="cuadro">
+    <h2>Conexión rápida</h2>
+    <p class="entrada">Con esto, las listas de escuelas y alumnos se leen de Supabase
+       en vez de pedirlas al Apps Script. Todo lo que guardas sigue igual.</p>
+
+    <label class="campo"><span>Correo de la cuenta de Supabase</span>
+      <input type="email" id="supaCorreo" autocomplete="username" spellcheck="false"></label>
+    <label class="campo"><span>Contraseña</span>
+      <input type="password" id="supaClave" autocomplete="current-password"></label>
+
+    <p class="pie" id="supaEstado" style="margin:4px 0 10px"></p>
+
+    <label class="marca"><input type="checkbox" id="supaApagar" onchange="apagarSupa(this.checked)">
+      Apagar y volver a leer del Apps Script</label>
+
+    <div class="pie-botones">
+      <button class="btn claro" onclick="cerrar('velSupa')">Cerrar</button>
+      <button class="btn claro chico" onclick="sbSalir();cerrar('velSupa')">Desconectar</button>
+      <button class="btn fuego" id="btnSupaConectar" onclick="conectarSupa()">Conectar</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="archivoLogoEstudio" accept="image/png,image/jpeg" style="display:none">
 
 <div class="velo" id="velReemplazo">
@@ -1211,7 +1236,335 @@ var REPETIBLES = { entrar: 1, escuelas: 1, nivel: 1, campos: 1, miniaturas: 1,
 
 function esEscritura(a) { return !REPETIBLES[a]; }
 
+/* ═══════════════════════════ Supabase ═══════════════════════════════════
+
+   Las listas (escuelas, alumnos, hoja de entrega) se leen de Supabase, que
+   responde en milesimas. Todo lo que escribe sigue yendo por el Apps Script,
+   que guarda en la hoja y de pasada actualiza Supabase.
+
+   Si Supabase no contesta, o no hay sesion, la lectura se va por el camino
+   de siempre sin que se note. Nada depende de que esto funcione.          */
+
+var SB = {
+  url:   (typeof SUPA_URL  === 'string' ? SUPA_URL  : '').replace(/\/+$/, ''),
+  anon:  (typeof SUPA_ANON === 'string' ? SUPA_ANON : ''),
+  token: '', refresco: '', vence: 0, correo: '',
+  prendido: true,
+  fallos: 0
+};
+
+function sbConfigurado() { return !!(SB.url && SB.anon); }
+function sbConectado()   { return !!(sbConfigurado() && SB.refresco); }
+
+/* ------------------------------------------------------------ la sesion */
+
+function sbGuardarSesion(d) {
+  SB.token    = d.access_token || '';
+  SB.refresco = d.refresh_token || '';
+  SB.vence    = Date.now() + (Number(d.expires_in || 3600) - 60) * 1000;
+  SB.correo   = (d.user && d.user.email) || SB.correo;
+  guardaLocal('alumna_sb', SB.refresco);
+  guardaLocal('alumna_sb_correo', SB.correo);
+  SB.fallos = 0;
+  pintarPildoraSupa();
+}
+
+function sbEntrar(correo, clave) {
+  return fetch(SB.url + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { apikey: SB.anon, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: correo, password: clave })
+  }).then(function (r) {
+    return r.json().then(function (d) {
+      if (!r.ok) throw new Error(d.error_description || d.msg || 'No pude entrar a Supabase');
+      SB.correo = correo;
+      sbGuardarSesion(d);
+      return true;
+    });
+  });
+}
+
+function sbRenovar() {
+  var guardado = SB.refresco || leeLocal('alumna_sb') || '';
+  if (!guardado) return Promise.reject(new Error('sin sesion'));
+  return fetch(SB.url + '/auth/v1/token?grant_type=refresh_token', {
+    method: 'POST',
+    headers: { apikey: SB.anon, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: guardado })
+  }).then(function (r) {
+    return r.json().then(function (d) {
+      if (!r.ok) {
+        SB.refresco = ''; guardaLocal('alumna_sb', '');
+        throw new Error('la sesion de Supabase caduco');
+      }
+      sbGuardarSesion(d);
+      return true;
+    });
+  });
+}
+
+function sbSesion() {
+  if (SB.token && Date.now() < SB.vence) return Promise.resolve(true);
+  return sbRenovar();
+}
+
+function sbSalir() {
+  SB.token = ''; SB.refresco = ''; SB.vence = 0;
+  guardaLocal('alumna_sb', '');
+  pintarPildoraSupa();
+  decir('Supabase desconectado. La app sigue funcionando por el camino de siempre.');
+}
+
+/* -------------------------------------------------------------- pedidos */
+
+function sbPedir(ruta) {
+  return sbSesion().then(function () {
+    return fetch(SB.url + '/rest/v1/' + ruta, {
+      headers: {
+        apikey: SB.anon,
+        Authorization: 'Bearer ' + SB.token,
+        Accept: 'application/json'
+      }
+    });
+  }).then(function (r) {
+    if (!r.ok) return r.text().then(function (t) { throw new Error('Supabase ' + r.status + ': ' + t.slice(0, 160)); });
+    return r.json();
+  });
+}
+
+/* ------------------------------------------------------------- lecturas */
+
+function sbEscuelas() {
+  return Promise.all([
+    sbPedir('escuelas?select=id,nombre,carpeta_id&order=nombre.asc'),
+    sbPedir('niveles?select=id,escuela_id,nombre,columnas,alumnos&order=nombre.asc')
+  ]).then(function (r) {
+    var escuelas = r[0], niveles = r[1], porId = {};
+    var salida = escuelas.map(function (e) {
+      var x = { id: e.id, nombre: e.nombre, carpeta: e.carpeta_id, niveles: [] };
+      porId[e.id] = x;
+      return x;
+    });
+    niveles.forEach(function (n) {
+      var padre = porId[n.escuela_id];
+      if (!padre) return;
+      var cols = n.columnas || [];
+      padre.niveles.push({
+        id: n.id, escuela: n.escuela_id, nombre: n.nombre,
+        fichas: cols.indexOf('FICHA') >= 0,
+        alumnos: Number(n.alumnos) || 0
+      });
+    });
+    return { ok: true, escuelas: salida, raiz: S.raiz || '', deSupabase: true };
+  });
+}
+
+function sbNivel(d) {
+  var id = encodeURIComponent(d.nivelId);
+  return Promise.all([
+    sbPedir('niveles?id=eq.' + id + '&select=*,escuelas(nombre,logo,marca_img,fondo_img)'),
+    sbPedir('alumnos?nivel_id=eq.' + id + '&select=id,fila,datos&order=fila.asc')
+  ]).then(function (r) {
+    var n = r[0][0];
+    if (!n) throw new Error('ese nivel no esta en Supabase');
+    var esc = n.escuelas || {};
+    var columnas = n.columnas || [];
+
+    var alumnos = r[1].map(function (a) {
+      var datos = a.datos || {};
+      return {
+        _id: String(a.id),
+        v: columnas.map(function (c) {
+          var v = datos[c];
+          return (v === undefined || v === null) ? '' : String(v);
+        })
+      };
+    });
+
+    return {
+      ok: true,
+      nivel: {
+        id: n.id, nombre: n.nombre, escuelaId: n.escuela_id,
+        escuela: esc.nombre || '',
+        columnas: columnas, colFoto: n.col_foto, colFirma: n.col_firma,
+        colNombre: n.col_nombre, proporcion: n.proporcion || '3:4',
+        acabado: n.acabado || {},
+        marca: n.marca || {},
+        logo: esc.logo || '', marcaImg: esc.marca_img || '', fondoImg: esc.fondo_img || '',
+        carpeta: 'https://drive.google.com/drive/folders/' + n.carpeta_id
+      },
+      alumnos: alumnos,
+      deSupabase: true
+    };
+  });
+}
+
+/* Arma el nombre igual que lo hace el Apps Script, para que la hoja de
+   entrega salga identica. */
+function sbIndicesNombre(columnas, colNombre) {
+  var idx = { nom: -1, pat: -1, mat: -1 };
+  columnas.forEach(function (c, i) {
+    var u = String(c).toUpperCase();
+    if (idx.pat < 0 && /PATERNO/.test(u))  { idx.pat = i; return; }
+    if (idx.mat < 0 && /MATERNO/.test(u))  { idx.mat = i; return; }
+    if (idx.pat < 0 && /APELLIDO/.test(u)) { idx.pat = i; return; }
+    if (idx.nom < 0 && /NOMBRE|ALUMNO/.test(u)) { idx.nom = i; }
+  });
+  if (idx.nom < 0) idx.nom = columnas.indexOf(colNombre);
+  if (idx.nom < 0) idx.nom = 0;
+  return idx;
+}
+
+function sbArmaNombre(datos, columnas, idx) {
+  function col(i) { return i >= 0 ? String(datos[columnas[i]] || '') : ''; }
+  if (idx.pat < 0 && idx.mat < 0) return col(idx.nom);
+  return [col(idx.pat), col(idx.mat), col(idx.nom)]
+    .filter(function (x) { return x.trim(); })
+    .map(function (x) { return x.trim(); })
+    .join(' ').replace(/\s+/g, ' ');
+}
+
+function sbNormaliza(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+function sbEntrega(d) {
+  var id = encodeURIComponent(d.escuelaId);
+  return Promise.all([
+    sbPedir('escuelas?id=eq.' + id + '&select=nombre,nombre_largo'),
+    sbPedir('niveles?escuela_id=eq.' + id +
+            '&select=id,nombre,columnas,col_foto,col_nombre&order=nombre.asc')
+  ]).then(function (r) {
+    var e = r[0][0] || {}, niveles = r[1];
+    if (!niveles.length) return { ok: true, escuela: e.nombre || '', largo: e.nombre_largo || '', niveles: [] };
+
+    // todos los alumnos de la escuela en un solo pedido
+    var lista = niveles.map(function (n) { return '"' + n.id + '"'; }).join(',');
+    return sbPedir('alumnos?nivel_id=in.(' + encodeURIComponent(lista) +
+                   ')&select=id,nivel_id,datos').then(function (alumnos) {
+      var porNivel = {};
+      alumnos.forEach(function (a) {
+        (porNivel[a.nivel_id] = porNivel[a.nivel_id] || []).push(a);
+      });
+
+      var salida = niveles.map(function (n) {
+        var columnas = n.columnas || [];
+        var idx = sbIndicesNombre(columnas, n.col_nombre);
+        var hay = (porNivel[n.id] || []).map(function (a) {
+          var datos = a.datos || {};
+          var nombre = sbArmaNombre(datos, columnas, idx).trim() || '(sin nombre)';
+          return {
+            id: String(a.id),
+            nombre: nombre,
+            foto: n.col_foto ? !!String(datos[n.col_foto] || '').trim() : false
+          };
+        });
+        hay.sort(function (a, b) {
+          return sbNormaliza(a.nombre).localeCompare(sbNormaliza(b.nombre), 'es');
+        });
+        return { id: n.id, nombre: n.nombre, alumnos: hay };
+      });
+
+      return { ok: true, escuela: e.nombre || '', largo: e.nombre_largo || '',
+               niveles: salida, deSupabase: true };
+    });
+  });
+}
+
+function sbPrecios() {
+  return sbPedir('ajustes?clave=eq.precios&select=valor').then(function (r) {
+    var v = r.length ? r[0].valor : null;
+    if (!v || !v.length) throw new Error('precios no estan en Supabase');
+    return { ok: true, precios: v, deSupabase: true };
+  });
+}
+
+/* Lo que ya se puede leer de Supabase. El resto sigue por el Apps Script. */
+var SB_LEE = {
+  escuelas: sbEscuelas,
+  nivel:    sbNivel,
+  entrega:  sbEntrega,
+  precios:  sbPrecios
+};
+
+function sbPuede(accion) {
+  return SB.prendido && sbConectado() && !!SB_LEE[accion] && navigator.onLine && SB.fallos < 3;
+}
+
+/* ---------------------------------------------------- la pildora y el velo */
+
+function pintarPildoraSupa() {
+  var p = document.getElementById('pildoraSupa');
+  if (!p) return;
+  if (!sbConfigurado()) { p.classList.add('oculto'); return; }
+  p.classList.remove('oculto');
+  p.textContent = sbConectado() ? (SB.prendido ? 'Rápido' : 'Rápido: apagado') : 'Conectar';
+  p.className = 'btn claro chico' + (sbConectado() && SB.prendido ? ' listo' : '');
+}
+
+function abrirSupa() {
+  document.getElementById('supaCorreo').value = SB.correo || leeLocal('alumna_sb_correo') || '';
+  document.getElementById('supaClave').value = '';
+  document.getElementById('supaEstado').textContent = sbConectado()
+    ? 'Conectado. Las listas se leen de Supabase.'
+    : 'Sin conectar. Las listas se leen del Apps Script, como antes.';
+  document.getElementById('supaApagar').checked = !SB.prendido;
+  abrir('velSupa');
+}
+
+function conectarSupa() {
+  var correo = document.getElementById('supaCorreo').value.trim();
+  var clave = document.getElementById('supaClave').value;
+  if (!correo || !clave) { decir('Pon el correo y la contraseña', true); return; }
+
+  var b = document.getElementById('btnSupaConectar');
+  b.disabled = true; b.textContent = 'Entrando…';
+  sbEntrar(correo, clave).then(function () {
+    b.disabled = false; b.textContent = 'Conectar';
+    cerrar('velSupa');
+    decir('Conectado. Las listas ahora salen de Supabase.');
+    cargarEscuelas();
+  }).catch(function (e) {
+    b.disabled = false; b.textContent = 'Conectar';
+    document.getElementById('supaEstado').textContent = String(e.message || e);
+  });
+}
+
+function apagarSupa(si) {
+  SB.prendido = !si;
+  guardaLocal('alumna_sb_apagado', si ? '1' : '');
+  pintarPildoraSupa();
+  decir(si ? 'Listo, vuelve a leer del Apps Script.' : 'Listo, vuelve a leer de Supabase.');
+}
+
+/* Al abrir la app: si hay sesion guardada, se renueva en segundo plano. */
+function arrancarSupa() {
+  if (!sbConfigurado()) return Promise.resolve(false);
+  SB.prendido = !leeLocal('alumna_sb_apagado');
+  SB.correo = leeLocal('alumna_sb_correo') || '';
+  SB.refresco = leeLocal('alumna_sb') || '';
+  if (!SB.refresco) { pintarPildoraSupa(); return Promise.resolve(false); }
+  return sbRenovar().then(function () { return true; })
+                    .catch(function () { pintarPildoraSupa(); return false; });
+}
+
+/* ───────────────────────── el repartidor ─────────────────────────────
+   Las lecturas que Supabase ya sabe hacer van por ahi. Si tropieza, la
+   misma peticion se va por el Apps Script y el usuario no se entera.   */
 function api(accion, datos) {
+  if (sbPuede(accion)) {
+    return SB_LEE[accion](datos || {}).catch(function (e) {
+      SB.fallos++;
+      try { console.warn('Supabase: ' + (e.message || e) + ' — voy por el Apps Script'); } catch (x) {}
+      if (SB.fallos >= 3) { pintarPildoraSupa(); decir('Supabase no contesta; sigo por el camino de siempre.', true); }
+      return apiPorScript(accion, datos);
+    });
+  }
+  return apiPorScript(accion, datos);
+}
+
+function apiPorScript(accion, datos) {
   return new Promise(function (ok, mal) {
     FILA_API.push({ accion: accion, datos: datos, ok: ok, mal: mal, intento: 0 });
     correrFilaApi();
@@ -1349,7 +1702,7 @@ function probar() {
   relojEntrada = setTimeout(function () {
     aviso.textContent = 'Google está despertando el sistema — la primera vez del día tarda.';
   }, 4000);
-  api('entrar', {}).then(function (d) {
+  apiPorScript('entrar', { soloClave: sbPuede('escuelas') }).then(function (d) {
     clearTimeout(relojEntrada);
     guardaLocal('alumna_pass', intento);
     S.raiz = d.raiz || '';
@@ -1359,7 +1712,7 @@ function probar() {
       recordarEscuelas(d);
       entrar(true);
       pintarEscuelas();
-    } else entrar();
+    } else entrar();            // entrar() pide la lista, ahora a Supabase
   }).catch(function (err) {
     clearTimeout(relojEntrada);
     S.pass = '';
@@ -1382,7 +1735,9 @@ function salir() {
   location.reload();
 }
 
-(function () {
+arrancarSupa().then(arrancarApp);
+
+function arrancarApp() {
   var guardado = leeLocal('alumna_pass');
   if (!guardado) return;
   S.pass = guardado;
@@ -1398,9 +1753,13 @@ function salir() {
     decir('Poniéndome al día…');
   }
 
-  api('entrar', {}).then(function (d) {
+  apiPorScript('entrar', { soloClave: sbPuede('escuelas') }).then(function (d) {
     S.raiz = d.raiz || '';
     revisarVersionApi(d);
+    if (!d.escuelas) {                       // la lista la trae Supabase
+      if (previo) cargarEscuelas(); else entrar();
+      decir(''); return;
+    }
     if (d.escuelas) {
       S.escuelas = d.escuelas;
       recordarEscuelas(d);
@@ -1412,12 +1771,12 @@ function salir() {
     if (previo) { decir('Sin conexión — estás viendo lo último que se cargó', true); return; }
     S.pass = '';
   });
-})();
+}
 
 /* Numero de esta version de la pagina. Sale en la barra de arriba y tambien
    al pie de los PDF, para saber sin dudas con que version se hizo un
    documento. Subirlo cada vez que cambie index.html. */
-var VERSION_APP = 53;
+var VERSION_APP = 54;
 try { document.getElementById('selloVersion').textContent = 'v' + VERSION_APP; } catch (e) {}
 
 var API_QUE_NECESITO = 47;
