@@ -362,7 +362,7 @@
   <div class="barra">
     <div class="marca"><img src="logo.png" alt="" class="logo-barra"
          onerror="this.style.display='none'"> ALUM-NA
-      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v54</span></div>
+      <span class="mono" id="selloVersion" style="color:var(--muted-osc);font-weight:400">v56</span></div>
     <div class="migas" id="migas"></div>
     <div class="crece"></div>
     <span class="pildora" id="pildoraCola"><span class="luz"></span><span id="textoCola">Al día</span></span>
@@ -1000,7 +1000,10 @@
     <label class="campo"><span>Contraseña</span>
       <input type="password" id="supaClave" autocomplete="current-password"></label>
 
-    <p class="pie" id="supaEstado" style="margin:4px 0 10px"></p>
+    <label class="marca"><input type="checkbox" id="supaRecordar" checked>
+      Recordar en este aparato y entrar solo de aquí en adelante</label>
+
+    <p class="pie" id="supaEstado" style="margin:8px 0 10px"></p>
 
     <label class="marca"><input type="checkbox" id="supaApagar" onchange="apagarSupa(this.checked)">
       Apagar y volver a leer del Apps Script</label>
@@ -1217,6 +1220,16 @@ var S = {
 function guardaLocal(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
 function leeLocal(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
 
+/* Lo de arriba se borra al cerrar la pestaña, que es lo que queremos para la
+   contraseña de entrada. Pero la conexion con Supabase tiene que aguantar a
+   que se cierre la app y se vuelva a abrir, asi que esa va aparte y se queda. */
+function guardaFijo(k, v) {
+  try { localStorage.setItem(k, v); } catch (e) { guardaLocal(k, v); }
+}
+function leeFijo(k) {
+  try { return localStorage.getItem(k) || leeLocal(k); } catch (e) { return leeLocal(k); }
+}
+
 /* ══════════════════════════════════════════════════════════════════ api */
 
 /* ══════════════════════════════════════════════════════ hablar con Google
@@ -1263,8 +1276,8 @@ function sbGuardarSesion(d) {
   SB.refresco = d.refresh_token || '';
   SB.vence    = Date.now() + (Number(d.expires_in || 3600) - 60) * 1000;
   SB.correo   = (d.user && d.user.email) || SB.correo;
-  guardaLocal('alumna_sb', SB.refresco);
-  guardaLocal('alumna_sb_correo', SB.correo);
+  guardaFijo('alumna_sb', SB.refresco);
+  guardaFijo('alumna_sb_correo', SB.correo);
   SB.fallos = 0;
   pintarPildoraSupa();
 }
@@ -1276,12 +1289,61 @@ function sbEntrar(correo, clave) {
     body: JSON.stringify({ email: correo, password: clave })
   }).then(function (r) {
     return r.json().then(function (d) {
-      if (!r.ok) throw new Error(d.error_description || d.msg || 'No pude entrar a Supabase');
+      if (!r.ok) throw new Error(sbPorQue(d));
       SB.correo = correo;
+      sbRecordarEntrada(correo, clave);
       sbGuardarSesion(d);
       return true;
     });
   });
+}
+
+/* Traduce lo que contesta Supabase a algo que diga que hacer. */
+function sbPorQue(d) {
+  var codigo = String((d && (d.error_code || d.error)) || '').toLowerCase();
+  var texto = String((d && (d.msg || d.message || d.error_description)) || '').toLowerCase();
+
+  if (codigo.indexOf('email_not_confirmed') >= 0 || texto.indexOf('not confirmed') >= 0) {
+    return 'Ese usuario no está confirmado. En Supabase, Authentication → Users, ' +
+           'bórralo y vuelve a crearlo con la casilla Auto Confirm User marcada.';
+  }
+  if (codigo.indexOf('invalid_credentials') >= 0 || texto.indexOf('invalid login') >= 0) {
+    return 'Correo o contraseña equivocados. Es la cuenta de Authentication → Users, ' +
+           'no la de tu cuenta de Supabase.';
+  }
+  if (codigo.indexOf('user_not_found') >= 0 || texto.indexOf('user not found') >= 0) {
+    return 'Ese correo ya no existe en Supabase. Vuelve a crearlo en Authentication → Users.';
+  }
+  if (texto.indexOf('anonymous') >= 0 || texto.indexOf('api key') >= 0 || codigo === '401') {
+    return 'La llave publishable de config.js no corresponde a este proyecto.';
+  }
+  return (d && (d.msg || d.message || d.error_description)) || 'No pude entrar a Supabase';
+}
+
+/* Se guarda en este aparato para no volver a preguntar. Esto NO es una caja
+   fuerte: queda en el almacen del navegador de esta tablet o computadora, que
+   ya esta detras del PIN de la app. Lo que no se hace nunca es ponerla en
+   config.js, porque ese archivo se publica junto con la pagina. */
+function sbRecordarEntrada(correo, clave) {
+  if (!document.getElementById('supaRecordar') ||
+      document.getElementById('supaRecordar').checked) {
+    try {
+      guardaFijo('alumna_sb_correo', correo);
+      guardaFijo('alumna_sb_clave', btoa(unescape(encodeURIComponent(clave))));
+    } catch (e) {}
+  }
+}
+
+function sbEntradaGuardada() {
+  var correo = leeFijo('alumna_sb_correo') || '';
+  var clave = leeFijo('alumna_sb_clave') || '';
+  if (!correo || !clave) return null;
+  try { return { correo: correo, clave: decodeURIComponent(escape(atob(clave))) }; }
+  catch (e) { return null; }
+}
+
+function sbOlvidarEntrada() {
+  guardaFijo('alumna_sb_clave', '');
 }
 
 function sbRenovar() {
@@ -1294,7 +1356,11 @@ function sbRenovar() {
   }).then(function (r) {
     return r.json().then(function (d) {
       if (!r.ok) {
-        SB.refresco = ''; guardaLocal('alumna_sb', '');
+        // La sesion ya no vale (caduco, o se borro el usuario y se volvio a
+        // crear). Si este aparato tiene guardada la entrada, entra solo.
+        SB.refresco = ''; guardaFijo('alumna_sb', '');
+        var g = sbEntradaGuardada();
+        if (g) return sbEntrar(g.correo, g.clave);
         throw new Error('la sesion de Supabase caduco');
       }
       sbGuardarSesion(d);
@@ -1310,7 +1376,8 @@ function sbSesion() {
 
 function sbSalir() {
   SB.token = ''; SB.refresco = ''; SB.vence = 0;
-  guardaLocal('alumna_sb', '');
+  guardaFijo('alumna_sb', '');
+  sbOlvidarEntrada();
   pintarPildoraSupa();
   decir('Supabase desconectado. La app sigue funcionando por el camino de siempre.');
 }
@@ -1504,10 +1571,12 @@ function pintarPildoraSupa() {
 }
 
 function abrirSupa() {
-  document.getElementById('supaCorreo').value = SB.correo || leeLocal('alumna_sb_correo') || '';
+  document.getElementById('supaCorreo').value = SB.correo || leeFijo('alumna_sb_correo') || '';
   document.getElementById('supaClave').value = '';
   document.getElementById('supaEstado').textContent = sbConectado()
-    ? 'Conectado. Las listas se leen de Supabase.'
+    ? (sbEntradaGuardada()
+        ? 'Conectado. Este aparato ya entra solo; no vuelve a preguntar.'
+        : 'Conectado. Las listas se leen de Supabase.')
     : 'Sin conectar. Las listas se leen del Apps Script, como antes.';
   document.getElementById('supaApagar').checked = !SB.prendido;
   abrir('velSupa');
@@ -1533,7 +1602,7 @@ function conectarSupa() {
 
 function apagarSupa(si) {
   SB.prendido = !si;
-  guardaLocal('alumna_sb_apagado', si ? '1' : '');
+  guardaFijo('alumna_sb_apagado', si ? '1' : '');
   pintarPildoraSupa();
   decir(si ? 'Listo, vuelve a leer del Apps Script.' : 'Listo, vuelve a leer de Supabase.');
 }
@@ -1541,10 +1610,17 @@ function apagarSupa(si) {
 /* Al abrir la app: si hay sesion guardada, se renueva en segundo plano. */
 function arrancarSupa() {
   if (!sbConfigurado()) return Promise.resolve(false);
-  SB.prendido = !leeLocal('alumna_sb_apagado');
-  SB.correo = leeLocal('alumna_sb_correo') || '';
-  SB.refresco = leeLocal('alumna_sb') || '';
-  if (!SB.refresco) { pintarPildoraSupa(); return Promise.resolve(false); }
+  SB.prendido = !leeFijo('alumna_sb_apagado');
+  SB.correo = leeFijo('alumna_sb_correo') || '';
+  SB.refresco = leeFijo('alumna_sb') || '';
+
+  var guardada = sbEntradaGuardada();
+  if (!SB.refresco) {
+    if (!guardada) { pintarPildoraSupa(); return Promise.resolve(false); }
+    return sbEntrar(guardada.correo, guardada.clave)
+             .then(function () { return true; })
+             .catch(function () { pintarPildoraSupa(); return false; });
+  }
   return sbRenovar().then(function () { return true; })
                     .catch(function () { pintarPildoraSupa(); return false; });
 }
@@ -1776,7 +1852,7 @@ function arrancarApp() {
 /* Numero de esta version de la pagina. Sale en la barra de arriba y tambien
    al pie de los PDF, para saber sin dudas con que version se hizo un
    documento. Subirlo cada vez que cambie index.html. */
-var VERSION_APP = 54;
+var VERSION_APP = 56;
 try { document.getElementById('selloVersion').textContent = 'v' + VERSION_APP; } catch (e) {}
 
 var API_QUE_NECESITO = 47;
